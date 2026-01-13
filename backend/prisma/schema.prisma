@@ -1,0 +1,62 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Clause {
+  id          Int      @id @default(autoincrement())
+  title       String   @db.VarChar(255)
+  content     String   @db.Text
+  version     Int      @default(1)
+  parentId    Int?     @map("parent_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  parent      Clause?  @relation("ClauseVersions", fields: [parentId], references: [id])
+  versions    Clause[] @relation("ClauseVersions")
+  blocks      ContractBlock[]
+
+  @@map("clauses")
+}
+
+model Contract {
+  id          Int      @id @default(autoincrement())
+  title       String   @db.VarChar(255)
+  description String?  @db.Text
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  blocks      ContractBlock[]
+
+  @@map("contracts")
+}
+
+model ContractBlock {
+  id          Int       @id @default(autoincrement())
+  contractId  Int       @map("contract_id")
+  clauseId    Int?      @map("clause_id")
+  type        BlockType
+  content     String?   @db.Text
+  htmlTag     String    @default("p") @map("html_tag") @db.VarChar(20)
+  styles      String?   @db.Text
+  order       Int
+  level       Int       @default(1)
+  numbering   String?   @db.VarChar(50)
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  contract    Contract  @relation(fields: [contractId], references: [id], onDelete: Cascade)
+  clause      Clause?   @relation(fields: [clauseId], references: [id])
+
+  @@map("contract_blocks")
+}
+
+enum BlockType {
+  TITLE
+  CLAUSE
+  OBS
+}

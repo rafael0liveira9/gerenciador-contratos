@@ -1,0 +1,7 @@
+Tenant (Empresa)
+ ├── Usuários autorizados via integração.
+ ├── Contract Templates (Modelos)
+ │     └── Editor completo
+ │        └── Blocos
+ └── Client Contracts (Instâncias)
+       └── Somente leitura (após envio), com status (enviado, assinado, cancelado etc..)
