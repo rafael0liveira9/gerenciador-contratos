@@ -1,25 +1,20 @@
 import { useState, useEffect } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import { updateBlock, removeBlock, setEditingBlock, selectEditingBlockId } from '../store/blocksSlice';
-import { createClauseVersion } from '../store/clausesSlice';
 import RichTextEditor from './RichTextEditor';
 
-function Block({ block, onLevelChange }) {
-  const dispatch = useDispatch();
-  const editingBlockId = useSelector(selectEditingBlockId);
-  const isEditing = editingBlockId === block.id;
+function Block({ block, onUpdate, onDelete }) {
+  const [isEditing, setIsEditing] = useState(false);
   const [editContent, setEditContent] = useState('');
   const [editHtmlTag, setEditHtmlTag] = useState('p');
   const [editStyles, setEditStyles] = useState({});
 
-  // Parse styles from block
-  const blockStyles = block.styles ? (typeof block.styles === 'string' ? JSON.parse(block.styles) : block.styles) : {};
+  const blockStyles = block.styles
+    ? (typeof block.styles === 'string' ? JSON.parse(block.styles) : block.styles)
+    : {};
 
   const style = {
     marginLeft: `${(block.level - 1) * 24}px`
   };
 
-  // Estilos customizados do bloco
   const contentStyle = {
     marginTop: blockStyles.marginTop ? `${blockStyles.marginTop}px` : undefined,
     marginRight: blockStyles.marginRight ? `${blockStyles.marginRight}px` : undefined,
@@ -34,7 +29,7 @@ function Block({ block, onLevelChange }) {
 
   useEffect(() => {
     if (isEditing) {
-      const content = block.type === 'CLAUSE' ? block.clause?.content : block.content;
+      const content = getContent();
       setEditContent(content || '');
       setEditHtmlTag(block.htmlTag || 'p');
       setEditStyles(blockStyles);
@@ -42,71 +37,75 @@ function Block({ block, onLevelChange }) {
   }, [isEditing]);
 
   const handleEdit = () => {
-    dispatch(setEditingBlock(block.id));
+    setIsEditing(true);
   };
 
-  const handleSave = async () => {
-    if (block.type === 'CLAUSE' && block.clause) {
-      // Cria nova versao da clausula com o conteudo HTML
-      await dispatch(createClauseVersion({
-        id: block.clause.parentId || block.clause.id,
-        data: { content: editContent }
-      }));
-      // Atualiza estilos do bloco
-      await dispatch(updateBlock({
-        blockId: block.id,
-        data: {
-          htmlTag: editHtmlTag,
-          styles: editStyles
-        }
-      }));
-    } else {
-      await dispatch(updateBlock({
-        blockId: block.id,
-        data: {
-          content: editContent,
-          htmlTag: editHtmlTag,
-          styles: editStyles
-        }
-      }));
-    }
-    dispatch(setEditingBlock(null));
+  const handleSave = () => {
+    onUpdate({
+      htmlTag: editHtmlTag,
+      styles: editStyles
+    });
+    setIsEditing(false);
   };
 
   const handleCancel = () => {
-    dispatch(setEditingBlock(null));
+    setIsEditing(false);
   };
 
   const handleDelete = () => {
     if (confirm('Remover este bloco?')) {
-      dispatch(removeBlock(block.id));
+      onDelete();
     }
   };
 
   const handleLevelUp = () => {
     if (block.level > 1) {
-      onLevelChange(block.id, block.level - 1);
+      onUpdate({ level: block.level - 1 });
     }
   };
 
   const handleLevelDown = () => {
     if (block.level < 5) {
-      onLevelChange(block.id, block.level + 1);
+      onUpdate({ level: block.level + 1 });
     }
   };
 
   const getContent = () => {
-    if (block.type === 'CLAUSE') {
-      return block.clause?.content || '[Clausula removida]';
+    switch (block.tipo) {
+      case 'CLAUSULA':
+        return block.clausula?.conteudo || '[Clausula removida]';
+      case 'CABECALHO':
+        return block.cabecalho?.conteudo || '[Cabecalho removido]';
+      case 'RODAPE':
+        return block.rodape?.conteudo || '[Rodape removido]';
+      case 'TITULO':
+        return 'Titulo';
+      case 'OBSERVACAO':
+        return 'Observacao';
+      default:
+        return '';
     }
-    return block.content || '';
+  };
+
+  const getBlockInfo = () => {
+    switch (block.tipo) {
+      case 'CLAUSULA':
+        return block.clausula
+          ? `${block.clausula.nome} (v${block.clausula.versao})`
+          : '';
+      case 'CABECALHO':
+        return block.cabecalho?.nome || '';
+      case 'RODAPE':
+        return block.rodape?.nome || '';
+      default:
+        return '';
+    }
   };
 
   const renderContent = () => {
     const content = getContent();
     const Tag = block.htmlTag || 'p';
 
-    // Renderiza o conteudo HTML
     return (
       <Tag
         className="block-html-content"
@@ -119,16 +118,14 @@ function Block({ block, onLevelChange }) {
   return (
     <div
       style={style}
-      className={`block block-${block.type.toLowerCase()}`}
+      className={`block block-${block.tipo.toLowerCase()}`}
     >
       <div className="block-header">
-        <span className="block-numbering">{block.numbering}</span>
-        <span className="block-type">{block.type}</span>
+        {block.numeracao && <span className="block-numbering">{block.numeracao}</span>}
+        <span className="block-type">{block.tipo}</span>
         <span className="block-tag">&lt;{block.htmlTag || 'p'}&gt;</span>
-        {block.type === 'CLAUSE' && block.clause && (
-          <span className="clause-info">
-            {block.clause.title} (v{block.clause.version})
-          </span>
+        {getBlockInfo() && (
+          <span className="clause-info">{getBlockInfo()}</span>
         )}
         <div className="block-actions">
           <button onClick={handleLevelUp} disabled={block.level <= 1} title="Subir nivel">
@@ -160,7 +157,7 @@ function Block({ block, onLevelChange }) {
             <button onClick={handleSave} className="save-btn">Salvar</button>
             <button onClick={handleCancel}>Cancelar</button>
           </div>
-          {block.type === 'CLAUSE' && (
+          {block.tipo === 'CLAUSULA' && (
             <small className="edit-note">
               Ao salvar, uma nova versao da clausula sera criada.
             </small>

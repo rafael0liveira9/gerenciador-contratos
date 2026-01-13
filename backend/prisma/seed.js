@@ -1,242 +1,300 @@
 const { PrismaClient } = require('@prisma/client');
-
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log('Seeding database...');
+  console.log('Iniciando seed...');
 
   // Limpa dados existentes
-  await prisma.contractBlock.deleteMany();
-  await prisma.contract.deleteMany();
-  await prisma.clause.deleteMany();
+  await prisma.bloco.deleteMany();
+  await prisma.pagina.deleteMany();
+  await prisma.contrato.deleteMany();
+  await prisma.template.deleteMany();
+  await prisma.clausula.deleteMany();
+  await prisma.cabecalho.deleteMany();
+  await prisma.rodape.deleteMany();
+  await prisma.variavel.deleteMany();
+  await prisma.responsavel.deleteMany();
+  await prisma.empresa.deleteMany();
 
-  // Cria clausulas de exemplo
-  const clauses = await Promise.all([
-    prisma.clause.create({
-      data: {
-        title: 'Objeto do Contrato',
-        content: 'O presente contrato tem por objeto a prestacao de servicos de desenvolvimento de software, conforme especificacoes detalhadas no Anexo I.',
-        version: 1
-      }
-    }),
-    prisma.clause.create({
-      data: {
-        title: 'Prazo de Vigencia',
-        content: 'O prazo de vigencia do presente contrato sera de 12 (doze) meses, contados a partir da data de sua assinatura, podendo ser prorrogado mediante termo aditivo.',
-        version: 1
-      }
-    }),
-    prisma.clause.create({
-      data: {
-        title: 'Valor e Forma de Pagamento',
-        content: 'O valor total do presente contrato e de R$ [VALOR], a ser pago em [PARCELAS] parcelas mensais e consecutivas, mediante apresentacao de nota fiscal.',
-        version: 1
-      }
-    }),
-    prisma.clause.create({
-      data: {
-        title: 'Obrigacoes da Contratada',
-        content: 'A CONTRATADA obriga-se a: a) executar os servicos conforme especificacoes tecnicas; b) cumprir os prazos estabelecidos; c) manter sigilo das informacoes.',
-        version: 1
-      }
-    }),
-    prisma.clause.create({
-      data: {
-        title: 'Obrigacoes do Contratante',
-        content: 'O CONTRATANTE obriga-se a: a) fornecer as informacoes necessarias; b) efetuar os pagamentos nas datas acordadas; c) designar responsavel tecnico.',
-        version: 1
-      }
-    }),
-    prisma.clause.create({
-      data: {
-        title: 'Confidencialidade',
-        content: 'As partes comprometem-se a manter sob sigilo todas as informacoes confidenciais trocadas em razao deste contrato, pelo prazo de 5 (cinco) anos apos seu termino.',
-        version: 1
-      }
-    }),
-    prisma.clause.create({
-      data: {
-        title: 'Rescisao Contratual',
-        content: 'O presente contrato podera ser rescindido por qualquer das partes, mediante aviso previo de 30 (trinta) dias, sem onus ou penalidades, salvo disposicao em contrario.',
-        version: 1
-      }
-    }),
-    prisma.clause.create({
-      data: {
-        title: 'Foro',
-        content: 'Fica eleito o foro da Comarca de [CIDADE/ESTADO] para dirimir quaisquer duvidas ou controversias oriundas do presente contrato, com renuncia a qualquer outro.',
-        version: 1
-      }
-    }),
-    prisma.clause.create({
-      data: {
-        title: 'Penalidades',
-        content: 'O descumprimento de qualquer clausula deste contrato sujeitara a parte infratora ao pagamento de multa de 10% (dez por cento) sobre o valor total do contrato.',
-        version: 1
-      }
-    }),
-    prisma.clause.create({
-      data: {
-        title: 'Propriedade Intelectual',
-        content: 'Todos os direitos de propriedade intelectual sobre os produtos desenvolvidos em razao deste contrato serao de titularidade exclusiva do CONTRATANTE.',
-        version: 1
-      }
-    })
-  ]);
-
-  console.log(`Created ${clauses.length} clauses`);
-
-  // Cria contrato de exemplo
-  const contract = await prisma.contract.create({
+  // Criar empresa
+  const empresa = await prisma.empresa.create({
     data: {
-      title: 'Contrato de Prestacao de Servicos de Desenvolvimento',
-      description: 'Contrato modelo para prestacao de servicos de desenvolvimento de software'
+      documento: '12.345.678/0001-90',
+      nome: 'Select Contabilidade',
+      slug: 'select',
+      secret: 'secret123',
+      ativo: true
     }
   });
+  console.log('Empresa criada:', empresa.nome);
 
-  console.log(`Created contract: ${contract.title}`);
+  // Criar responsavel
+  const responsavel = await prisma.responsavel.create({
+    data: {
+      empresaId: empresa.id,
+      nome: 'Rafael Silva',
+      cpf: '123.456.789-00',
+      telefone: '(11) 99999-9999',
+      email: 'rafael@select.com.br'
+    }
+  });
+  console.log('Responsavel criado:', responsavel.nome);
 
-  // Adiciona blocos ao contrato
-  const blocks = await Promise.all([
-    prisma.contractBlock.create({
+  // Criar variaveis
+  const variaveis = await Promise.all([
+    prisma.variavel.create({
       data: {
-        contractId: contract.id,
-        type: 'TITLE',
-        content: 'DAS DISPOSICOES PRELIMINARES',
-        order: 0,
-        level: 1,
-        numbering: '1'
+        empresaId: empresa.id,
+        label: 'Nome do Cliente',
+        tag: '{{nome_cliente}}'
       }
     }),
-    prisma.contractBlock.create({
+    prisma.variavel.create({
       data: {
-        contractId: contract.id,
-        type: 'CLAUSE',
-        clauseId: clauses[0].id,
-        order: 1,
-        level: 2,
-        numbering: '1.1'
+        empresaId: empresa.id,
+        label: 'CPF do Cliente',
+        tag: '{{cpf_cliente}}'
       }
     }),
-    prisma.contractBlock.create({
+    prisma.variavel.create({
       data: {
-        contractId: contract.id,
-        type: 'CLAUSE',
-        clauseId: clauses[1].id,
-        order: 2,
-        level: 2,
-        numbering: '1.2'
+        empresaId: empresa.id,
+        label: 'Data Atual',
+        tag: '{{data_atual}}'
       }
     }),
-    prisma.contractBlock.create({
+    prisma.variavel.create({
       data: {
-        contractId: contract.id,
-        type: 'TITLE',
-        content: 'DO VALOR E PAGAMENTO',
-        order: 3,
-        level: 1,
-        numbering: '2'
-      }
-    }),
-    prisma.contractBlock.create({
-      data: {
-        contractId: contract.id,
-        type: 'CLAUSE',
-        clauseId: clauses[2].id,
-        order: 4,
-        level: 2,
-        numbering: '2.1'
-      }
-    }),
-    prisma.contractBlock.create({
-      data: {
-        contractId: contract.id,
-        type: 'OBS',
-        content: 'Nota: Os valores podem ser reajustados anualmente pelo indice IPCA.',
-        order: 5,
-        level: 2,
-        numbering: '2.2'
-      }
-    }),
-    prisma.contractBlock.create({
-      data: {
-        contractId: contract.id,
-        type: 'TITLE',
-        content: 'DAS OBRIGACOES DAS PARTES',
-        order: 6,
-        level: 1,
-        numbering: '3'
-      }
-    }),
-    prisma.contractBlock.create({
-      data: {
-        contractId: contract.id,
-        type: 'CLAUSE',
-        clauseId: clauses[3].id,
-        order: 7,
-        level: 2,
-        numbering: '3.1'
-      }
-    }),
-    prisma.contractBlock.create({
-      data: {
-        contractId: contract.id,
-        type: 'CLAUSE',
-        clauseId: clauses[4].id,
-        order: 8,
-        level: 2,
-        numbering: '3.2'
-      }
-    }),
-    prisma.contractBlock.create({
-      data: {
-        contractId: contract.id,
-        type: 'TITLE',
-        content: 'DAS DISPOSICOES FINAIS',
-        order: 9,
-        level: 1,
-        numbering: '4'
-      }
-    }),
-    prisma.contractBlock.create({
-      data: {
-        contractId: contract.id,
-        type: 'CLAUSE',
-        clauseId: clauses[5].id,
-        order: 10,
-        level: 2,
-        numbering: '4.1'
-      }
-    }),
-    prisma.contractBlock.create({
-      data: {
-        contractId: contract.id,
-        type: 'CLAUSE',
-        clauseId: clauses[6].id,
-        order: 11,
-        level: 2,
-        numbering: '4.2'
-      }
-    }),
-    prisma.contractBlock.create({
-      data: {
-        contractId: contract.id,
-        type: 'CLAUSE',
-        clauseId: clauses[7].id,
-        order: 12,
-        level: 2,
-        numbering: '4.3'
+        empresaId: empresa.id,
+        label: 'Valor do Contrato',
+        tag: '{{valor_contrato}}'
       }
     })
   ]);
+  console.log('Variaveis criadas:', variaveis.length);
 
-  console.log(`Created ${blocks.length} blocks`);
-  console.log('Seed completed successfully!');
+  // Criar cabecalho
+  const cabecalho = await prisma.cabecalho.create({
+    data: {
+      empresaId: empresa.id,
+      nome: 'Cabecalho Padrao',
+      conteudo: '<div style="text-align: center;"><h1>SELECT CONTABILIDADE</h1><p>CNPJ: 12.345.678/0001-90</p><p>Rua das Empresas, 123 - Centro - Sao Paulo/SP</p></div>',
+      versao: 1
+    }
+  });
+  console.log('Cabecalho criado:', cabecalho.nome);
+
+  // Criar rodape
+  const rodape = await prisma.rodape.create({
+    data: {
+      empresaId: empresa.id,
+      nome: 'Rodape Padrao',
+      conteudo: '<div style="text-align: center; font-size: 10px; color: #666;"><p>Este documento foi gerado eletronicamente e nao necessita de assinatura fisica.</p><p>Pagina 1 de 1</p></div>',
+      versao: 1
+    }
+  });
+  console.log('Rodape criado:', rodape.nome);
+
+  // Criar clausulas
+  const clausulas = await Promise.all([
+    prisma.clausula.create({
+      data: {
+        empresaId: empresa.id,
+        nome: 'Objeto do Contrato',
+        conteudo: '<p>O presente contrato tem por objeto a prestacao de servicos contabeis, incluindo escrituracao contabil, apuracao de impostos e obrigacoes acessorias.</p>',
+        versao: 1
+      }
+    }),
+    prisma.clausula.create({
+      data: {
+        empresaId: empresa.id,
+        nome: 'Vigencia',
+        conteudo: '<p>O presente contrato tera vigencia de 12 (doze) meses, iniciando-se em {{data_atual}}, podendo ser renovado automaticamente por igual periodo.</p>',
+        versao: 1
+      }
+    }),
+    prisma.clausula.create({
+      data: {
+        empresaId: empresa.id,
+        nome: 'Valor e Forma de Pagamento',
+        conteudo: '<p>Pelo servico prestado, o CONTRATANTE pagara mensalmente a quantia de {{valor_contrato}}, com vencimento todo dia 10 de cada mes.</p>',
+        versao: 1
+      }
+    }),
+    prisma.clausula.create({
+      data: {
+        empresaId: empresa.id,
+        nome: 'Obrigacoes do Contratante',
+        conteudo: '<p>Sao obrigacoes do CONTRATANTE:</p><ul><li>Fornecer todos os documentos necessarios para a execucao dos servicos;</li><li>Efetuar o pagamento nas datas acordadas;</li><li>Comunicar qualquer alteracao cadastral.</li></ul>',
+        versao: 1
+      }
+    }),
+    prisma.clausula.create({
+      data: {
+        empresaId: empresa.id,
+        nome: 'Obrigacoes do Contratado',
+        conteudo: '<p>Sao obrigacoes do CONTRATADO:</p><ul><li>Executar os servicos com zelo e diligencia;</li><li>Manter sigilo sobre as informacoes do cliente;</li><li>Cumprir os prazos estabelecidos.</li></ul>',
+        versao: 1
+      }
+    }),
+    prisma.clausula.create({
+      data: {
+        empresaId: empresa.id,
+        nome: 'Rescisao',
+        conteudo: '<p>O presente contrato podera ser rescindido por qualquer das partes, mediante aviso previo de 30 (trinta) dias.</p>',
+        versao: 1
+      }
+    }),
+    prisma.clausula.create({
+      data: {
+        empresaId: empresa.id,
+        nome: 'Foro',
+        conteudo: '<p>Fica eleito o foro da Comarca de Sao Paulo/SP para dirimir quaisquer controversias oriundas do presente contrato.</p>',
+        versao: 1
+      }
+    })
+  ]);
+  console.log('Clausulas criadas:', clausulas.length);
+
+  // Criar template
+  const template = await prisma.template.create({
+    data: {
+      empresaId: empresa.id,
+      nome: 'Contrato de Prestacao de Servicos Contabeis',
+      descricao: 'Modelo padrao para contratacao de servicos contabeis',
+      versao: 1
+    }
+  });
+  console.log('Template criado:', template.nome);
+
+  // Criar pagina
+  const pagina = await prisma.pagina.create({
+    data: {
+      templateId: template.id,
+      ordem: 1,
+      conteudo: ''
+    }
+  });
+  console.log('Pagina criada');
+
+  // Criar blocos
+  const blocos = await Promise.all([
+    prisma.bloco.create({
+      data: {
+        paginaId: pagina.id,
+        cabecalhoId: cabecalho.id,
+        ordem: 1,
+        level: 1,
+        htmlTag: 'div',
+        tipo: 'CABECALHO'
+      }
+    }),
+    prisma.bloco.create({
+      data: {
+        paginaId: pagina.id,
+        ordem: 2,
+        level: 1,
+        htmlTag: 'h1',
+        tipo: 'TITULO',
+        styles: JSON.stringify({ textAlign: 'center', marginTop: 20, marginBottom: 20 })
+      }
+    }),
+    prisma.bloco.create({
+      data: {
+        paginaId: pagina.id,
+        clausulaId: clausulas[0].id,
+        ordem: 3,
+        level: 1,
+        numeracao: '1.',
+        htmlTag: 'div',
+        tipo: 'CLAUSULA'
+      }
+    }),
+    prisma.bloco.create({
+      data: {
+        paginaId: pagina.id,
+        clausulaId: clausulas[1].id,
+        ordem: 4,
+        level: 1,
+        numeracao: '2.',
+        htmlTag: 'div',
+        tipo: 'CLAUSULA'
+      }
+    }),
+    prisma.bloco.create({
+      data: {
+        paginaId: pagina.id,
+        clausulaId: clausulas[2].id,
+        ordem: 5,
+        level: 1,
+        numeracao: '3.',
+        htmlTag: 'div',
+        tipo: 'CLAUSULA'
+      }
+    }),
+    prisma.bloco.create({
+      data: {
+        paginaId: pagina.id,
+        clausulaId: clausulas[3].id,
+        ordem: 6,
+        level: 1,
+        numeracao: '4.',
+        htmlTag: 'div',
+        tipo: 'CLAUSULA'
+      }
+    }),
+    prisma.bloco.create({
+      data: {
+        paginaId: pagina.id,
+        clausulaId: clausulas[4].id,
+        ordem: 7,
+        level: 1,
+        numeracao: '5.',
+        htmlTag: 'div',
+        tipo: 'CLAUSULA'
+      }
+    }),
+    prisma.bloco.create({
+      data: {
+        paginaId: pagina.id,
+        clausulaId: clausulas[5].id,
+        ordem: 8,
+        level: 1,
+        numeracao: '6.',
+        htmlTag: 'div',
+        tipo: 'CLAUSULA'
+      }
+    }),
+    prisma.bloco.create({
+      data: {
+        paginaId: pagina.id,
+        clausulaId: clausulas[6].id,
+        ordem: 9,
+        level: 1,
+        numeracao: '7.',
+        htmlTag: 'div',
+        tipo: 'CLAUSULA'
+      }
+    }),
+    prisma.bloco.create({
+      data: {
+        paginaId: pagina.id,
+        rodapeId: rodape.id,
+        ordem: 10,
+        level: 1,
+        htmlTag: 'div',
+        tipo: 'RODAPE'
+      }
+    })
+  ]);
+  console.log('Blocos criados:', blocos.length);
+
+  console.log('Seed concluido com sucesso!');
 }
 
 main()
   .catch((e) => {
-    console.error('Error seeding database:', e);
+    console.error('Erro no seed:', e);
     process.exit(1);
   })
   .finally(async () => {

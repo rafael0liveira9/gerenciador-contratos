@@ -1,7 +1,137 @@
-Tenant (Empresa)
- ├── Usuários autorizados via integração.
- ├── Contract Templates (Modelos)
- │     └── Editor completo
- │        └── Blocos
- └── Client Contracts (Instâncias)
-       └── Somente leitura (após envio), com status (enviado, assinado, cancelado etc..)
+Reestruture o banco de dados para ser assim, faça a mudança dos models e depois dp push.
+
+empresa
+ ├─ responsavel
+ ├─ templates
+ │   └── paginas
+ │        └── blocos
+ │             └── (Aqui vai a clausula, rodape ou cabecalho, uma clausula por bloco, podem ter quantos blocos quiser na pagina.)
+ └─ contratos
+ └─ clausulas
+ └─ cabecalhos
+ └─ rodapes
+ └─ variaveis
+
+tabela empresa:{
+	id(NotNull),
+	documento(NotNull),
+	nome(NotNull),
+   slug(NotNull),
+	secret(NotNull),
+	ativo(NotNull),
+	data_criacao(NotNull),
+	data_edicao(NotNull),
+	data_exclusao(NotNull)
+	}
+
+tabela responsavel:{
+	id(NotNull), 
+	nome(NotNull), 
+	cpf(NotNull), 
+	telefone(NotNull), 
+	email(NotNull), 
+	data_criacao(NotNull), 
+	data_edicao(NotNull), 
+	data_exclusao(NotNull)
+	}
+
+tabela contratos:{
+	id(NotNull),
+	id_template(NotNull),
+	conteudo(NotNull),
+	data_enviado(NotNull), 
+   data_assinado(Null),
+   data_concluido(Null),
+   data_cancelado(Null),
+	}
+
+tabela templates:{
+	id(NotNull),
+	versao(NotNull),
+	nome(NotNull),  
+	descricao(Null),  
+	data_criacao(NotNull), 
+	data_edicao(Null),
+	data_exclusao(Null), 
+	inicio_vigencia(NotNull), 
+	fim_vigencia(Null)
+	}
+
+tabela paginas:{
+	id(NotNull),
+	id_template (NotNull),
+	ordem(NotNull),  
+	conteudo(NotNull),
+	ativo(NotNull), 
+	data_criacao(NotNull), 
+	data_exclusao(Null), 
+	}
+
+tabela blocos:{
+	id(NotNull),
+	id_pagina (NotNull),
+	id_clausula (NotNull),
+	ordem(NotNull), 
+	level(NotNull), 
+	numeracao(Null),
+	html_tag(NotNull),
+	styles(Null),
+	tipo(NotNull), TITULO, CLAUSULA, OBSERVACAO, CABECALHO, RODAPE 
+	data_criacao(NotNull), 
+	data_edicao(Null), 
+	}
+
+tabela clausulas:{
+	id(NotNull),
+   id_parent(NotNull),
+   nome(NotNull),
+   conteudo(NotNull),
+   versao(NotNull),
+	data_criacao(NotNull), 
+	data_edicao(Null), 
+   data_exclusao(Null), 
+	}
+
+tabela cabecalho:{
+	id(NotNull),
+   id_parent(NotNull),
+   nome(NotNull),
+   conteudo(NotNull),
+   versao(NotNull),
+	data_criacao(NotNull), 
+	data_edicao(Null), 
+   data_exclusao(Null), 
+	}
+
+tabela rodape:{
+	id(NotNull),
+   id_parent(NotNull),
+   nome(NotNull),
+   conteudo(NotNull),
+   versao(NotNull),
+	data_criacao(NotNull), 
+	data_edicao(Null), 
+   data_exclusao(Null), 
+	}
+
+tabela variaveis:{
+	id(NotNull),
+   label(NotNull),
+   tag(NotNull),
+	data_criacao(NotNull), 
+	data_edicao(Null), 
+	}
+
+Refaz o backend cria todas as rotas com base nessas novas tabelas. 
+O fluxo vai ser, ao acessar vai ser em http://localhost:5173/[slug].
+
+GET empresa por slug (param) e salva os dados no redux.
+
+GET clausulas por id da empresa
+GET cabecalhos por id da empresa
+GET rodapes por id da empresa
+GET contratos por id da empresa
+GET templates por id da empresa
+GET variaveis por id da empresa
+
+Salva tudo em arrays separados pra usar no front e refatora o front pra usar de acordo com isso.

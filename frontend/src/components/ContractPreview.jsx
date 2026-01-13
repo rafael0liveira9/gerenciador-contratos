@@ -1,4 +1,4 @@
-function ContractPreview({ contract, blocks, onClose }) {
+function ContractPreview({ template, blocks, onClose }) {
   const renderBlockContent = (block) => {
     const blockStyles = block.styles
       ? (typeof block.styles === 'string' ? JSON.parse(block.styles) : block.styles)
@@ -16,15 +16,31 @@ function ContractPreview({ contract, blocks, onClose }) {
       textAlign: blockStyles.textAlign || undefined
     };
 
-    const content = block.type === 'CLAUSE'
-      ? block.clause?.content
-      : block.content;
+    let content = '';
+    switch (block.tipo) {
+      case 'CLAUSULA':
+        content = block.clausula?.conteudo || '';
+        break;
+      case 'CABECALHO':
+        content = block.cabecalho?.conteudo || '';
+        break;
+      case 'RODAPE':
+        content = block.rodape?.conteudo || '';
+        break;
+      case 'TITULO':
+        content = 'Titulo';
+        break;
+      case 'OBSERVACAO':
+        content = 'Observacao';
+        break;
+      default:
+        content = '';
+    }
 
     const Tag = block.htmlTag || 'p';
 
     return (
       <div key={block.id} className="preview-block">
-        {/* {block.numbering && <span className="preview-numbering">{block.numbering}</span>} */}
         <Tag style={style} dangerouslySetInnerHTML={{ __html: content }} />
       </div>
     );
