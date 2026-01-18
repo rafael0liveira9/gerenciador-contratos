@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+const path = require('path');
 const empresasRoutes = require('./routes/empresas');
 const clausulasRoutes = require('./routes/clausulas');
 const cabecalhosRoutes = require('./routes/cabecalhos');
@@ -10,13 +11,19 @@ const blocosRoutes = require('./routes/blocos');
 const contratosRoutes = require('./routes/contratos');
 const variaveisRoutes = require('./routes/variaveis');
 const responsaveisRoutes = require('./routes/responsaveis');
+const bibliotecaRoutes = require('./routes/biblioteca');
+const documentosRoutes = require('./routes/documentos');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
 
 // Middlewares
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
+
+// Servir arquivos estáticos (PDFs gerados)
+app.use('/public', express.static(path.join(__dirname, '../public')));
 
 // Routes
 app.use('/api/empresas', empresasRoutes);
@@ -29,6 +36,8 @@ app.use('/api/blocos', blocosRoutes);
 app.use('/api/contratos', contratosRoutes);
 app.use('/api/variaveis', variaveisRoutes);
 app.use('/api/responsaveis', responsaveisRoutes);
+app.use('/api/biblioteca', bibliotecaRoutes);
+app.use('/api/documentos', documentosRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

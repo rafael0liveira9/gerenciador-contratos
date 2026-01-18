@@ -15,6 +15,27 @@ const getByEmpresa = async (req, res) => {
   }
 };
 
+const search = async (req, res) => {
+  try {
+    const { empresaId } = req.params;
+    const { q } = req.query;
+
+    const variaveis = await prisma.variavel.findMany({
+      where: {
+        empresaId: parseInt(empresaId),
+        tag: {
+          contains: q || ''
+        }
+      },
+      orderBy: { dataCriacao: 'desc' }
+    });
+    res.json(variaveis);
+  } catch (error) {
+    console.error('Erro ao buscar variaveis:', error);
+    res.status(500).json({ error: 'Erro ao buscar variaveis' });
+  }
+};
+
 const getById = async (req, res) => {
   try {
     const { id } = req.params;
@@ -35,11 +56,23 @@ const getById = async (req, res) => {
 
 const create = async (req, res) => {
   try {
-    const { empresaId, label, tag } = req.body;
+    const { empresaId, tag } = req.body;
+
+    // Verificar se já existe uma variável com essa tag na empresa
+    const existente = await prisma.variavel.findFirst({
+      where: {
+        empresaId: parseInt(empresaId),
+        tag: tag
+      }
+    });
+
+    if (existente) {
+      return res.status(400).json({ error: 'Essa variável já existe' });
+    }
+
     const variavel = await prisma.variavel.create({
       data: {
         empresaId: parseInt(empresaId),
-        label,
         tag
       }
     });
@@ -53,10 +86,10 @@ const create = async (req, res) => {
 const update = async (req, res) => {
   try {
     const { id } = req.params;
-    const { label, tag } = req.body;
+    const { tag } = req.body;
     const variavel = await prisma.variavel.update({
       where: { id: parseInt(id) },
-      data: { label, tag }
+      data: { tag }
     });
     res.json(variavel);
   } catch (error) {
@@ -78,4 +111,4 @@ const remove = async (req, res) => {
   }
 };
 
-module.exports = { getByEmpresa, getById, create, update, remove };
+module.exports = { getByEmpresa, getById, search, create, update, remove };

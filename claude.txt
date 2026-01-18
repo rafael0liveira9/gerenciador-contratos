@@ -1,137 +1,173 @@
-Reestruture o banco de dados para ser assim, faça a mudança dos models e depois dp push.
+abaixo tem um exemplo de função no puppeteer. vou explicar o que eu quero:
 
-empresa
- ├─ responsavel
- ├─ templates
- │   └── paginas
- │        └── blocos
- │             └── (Aqui vai a clausula, rodape ou cabecalho, uma clausula por bloco, podem ter quantos blocos quiser na pagina.)
- └─ contratos
- └─ clausulas
- └─ cabecalhos
- └─ rodapes
- └─ variaveis
+1- adicionar ao lado do botao visualizar (esquerdo) um botao Gerar contrato.
+2- Ao clicar, tem que verificar quais variaveis esse template usa.
+3- abrir um modal assim:
 
-tabela empresa:{
-	id(NotNull),
-	documento(NotNull),
-	nome(NotNull),
-   slug(NotNull),
-	secret(NotNull),
-	ativo(NotNull),
-	data_criacao(NotNull),
-	data_edicao(NotNull),
-	data_exclusao(NotNull)
-	}
+________________________________________________
+|                                               |
+|                Gerar Contrato                 |
+|                                               |
+|  Selecione as atribuições para cada variavel  |
+|        ________                               |
+|  Nome  |______|                               |
+|        ________                               |
+|  Lista |______|                               |
+|                                               |
+|                                               |
+|                       Cancelar      Gerar     |
+|_______________________________________________|
 
-tabela responsavel:{
-	id(NotNull), 
-	nome(NotNull), 
-	cpf(NotNull), 
-	telefone(NotNull), 
-	email(NotNull), 
-	data_criacao(NotNull), 
-	data_edicao(NotNull), 
-	data_exclusao(NotNull)
-	}
 
-tabela contratos:{
-	id(NotNull),
-	id_template(NotNull),
-	conteudo(NotNull),
-	data_enviado(NotNull), 
-   data_assinado(Null),
-   data_concluido(Null),
-   data_cancelado(Null),
-	}
+Vai fazer um map de todas as variaveis, trazendo o nome dela e ao lado um Select com as opções: Texto, Tabela, Varios Textos, Imagem.
 
-tabela templates:{
-	id(NotNull),
-	versao(NotNull),
-	nome(NotNull),  
-	descricao(Null),  
-	data_criacao(NotNull), 
-	data_edicao(Null),
-	data_exclusao(Null), 
-	inicio_vigencia(NotNull), 
-	fim_vigencia(Null)
-	}
+ao selecionar uma opção, dependendo da opção vai abrir embaixo dessa linha algo a ser preenchido:
 
-tabela paginas:{
-	id(NotNull),
-	id_template (NotNull),
-	ordem(NotNull),  
-	conteudo(NotNull),
-	ativo(NotNull), 
-	data_criacao(NotNull), 
-	data_exclusao(Null), 
-	}
+Texto: abre um input de Texto.
+Varios Textos: Vai abrir um input editor de texto e um + pra adicionar quantos textos precisarem.
+Imagem: Vai abrir um input que permite selecioanr uma rquivo PNG, JPG, JPEG.
+Tabela: Vai abrir um input editor com uma tabela com duas colunas e duas linhas, mas com um + ao lado de colunas pra mais colunas e outro pra mais linhas
 
-tabela blocos:{
-	id(NotNull),
-	id_pagina (NotNull),
-	id_clausula (NotNull),
-	ordem(NotNull), 
-	level(NotNull), 
-	numeracao(Null),
-	html_tag(NotNull),
-	styles(Null),
-	tipo(NotNull), TITULO, CLAUSULA, OBSERVACAO, CABECALHO, RODAPE 
-	data_criacao(NotNull), 
-	data_edicao(Null), 
-	}
+esse conteudo tem que ser salvo em variavel como html, com os estilos e tudo como escolhido e feito.
+Texto: '<p>Texto</p>'
+Varios Textos: '<p>Texto</p>, Texto: '<p>Texto</p>', Texto: '<p>Texto</p>', Texto: '<p>Texto</p>''
+Imagem: '<img>Imagem</img>'
+Tabela: '<ul>Tabela</ul>'
 
-tabela clausulas:{
-	id(NotNull),
-   id_parent(NotNull),
-   nome(NotNull),
-   conteudo(NotNull),
-   versao(NotNull),
-	data_criacao(NotNull), 
-	data_edicao(Null), 
-   data_exclusao(Null), 
-	}
 
-tabela cabecalho:{
-	id(NotNull),
-   id_parent(NotNull),
-   nome(NotNull),
-   conteudo(NotNull),
-   versao(NotNull),
-	data_criacao(NotNull), 
-	data_edicao(Null), 
-   data_exclusao(Null), 
-	}
+(A PARTIR DAQUI TUDO NO BACKEND)
+passar para o back os dados tipo asim:
 
-tabela rodape:{
-	id(NotNull),
-   id_parent(NotNull),
-   nome(NotNull),
-   conteudo(NotNull),
-   versao(NotNull),
-	data_criacao(NotNull), 
-	data_edicao(Null), 
-   data_exclusao(Null), 
-	}
+PAYLOAD:
 
-tabela variaveis:{
-	id(NotNull),
-   label(NotNull),
-   tag(NotNull),
-	data_criacao(NotNull), 
-	data_edicao(Null), 
-	}
+{
+  id_empresa: 1,
+  "template": {id: 1, content: "<html>{{nome}}{{map_nomes}}{{foto_cliente}}{{tabela_precos}}</html>"},
+  "variaveis": {
+    "nome": "<p>Texto</p>"
+    "map_nomes": '<p>Texto</p>, Texto: '<p>Texto</p>', Texto: '<p>Texto</p>', Texto: '<p>Texto</p>''
+    "foto_cliente": '<img>Imagem</img>'
+    "tabela_precos": '<ul>Tabela</ul>'
+  }
+}
 
-Refaz o backend cria todas as rotas com base nessas novas tabelas. 
-O fluxo vai ser, ao acessar vai ser em http://localhost:5173/[slug].
+ou seja, passa o template em template e as variaveis em variaveis...
 
-GET empresa por slug (param) e salva os dados no redux.
+usa o puppeteer pra montar o PDF, salva o pdf em uma pasta no backend, pdoe ser em alguma pasta public/documentos/[id], o id da empresa... e salva na tabela contratos do banco de dados:
 
-GET clausulas por id da empresa
-GET cabecalhos por id da empresa
-GET rodapes por id da empresa
-GET contratos por id da empresa
-GET templates por id da empresa
-GET variaveis por id da empresa
+{
+  id_empresa: 1,
+  id_template: 1,
+  content: "endereço do pdf no backend",
+  data_enviado: date now()
+}
 
-Salva tudo em arrays separados pra usar no front e refatora o front pra usar de acordo com isso.
+MUda tambem o nome da tabela contratos para documentos...
+
+Dai retorna pro front esse PDF, fecha o modal de variaveis (estava em loading)... e abre outro modal, com um visualizador de PDF pro clliente visualizar o Pdf, usa aquele visualizador padrao, que ja tem imprimir, exportar tudo ali...
+
+
+
+Abaixo um exemplo de outra API, mas você vai ter que modificar isso tudo aqui pra funcionar no formato que eu disse...
+
+
+const Handlebars = require('handlebars');
+
+function gerarTabelaAutomatica(array) {
+  if (!Array.isArray(array) || array.length === 0) return '';
+
+  const colunas = Object.keys(array[0]);
+
+  const thead = colunas
+    .map(col => `<th>${Handlebars.escapeExpression(col)}</th>`)
+    .join('');
+
+  const tbody = array
+    .map(item => `
+      <tr>
+        ${colunas.map(col => `<td>${item[col] ?? ''}</td>`).join('')}
+      </tr>
+    `)
+    .join('');
+
+  return `
+    <table border="1" cellpadding="5" cellspacing="0" width="100%">
+      <thead><tr>${thead}</tr></thead>
+      <tbody>${tbody}</tbody>
+    </table>
+  `;
+}
+
+
+function processarVariaveis(variaveis) {
+  const contexto = {};
+
+  for (const [key, value] of Object.entries(variaveis || {})) {
+
+    // 🔹 ARRAY
+    if (Array.isArray(value)) {
+
+      // map_ → apenas injeta HTML
+      if (key.startsWith('map_')) {
+        contexto[key] = new Handlebars.SafeString(
+          value.join('')
+        );
+        continue;
+      }
+
+      // array de objetos → tabela automática
+      if (typeof value[0] === 'object') {
+        contexto[key] = new Handlebars.SafeString(
+          gerarTabelaAutomatica(value)
+        );
+        continue;
+      }
+
+      // array simples → lista
+      contexto[key] = value.join(', ');
+      continue;
+    }
+
+    // 🔹 IMAGEM (URL ou base64)
+    if (
+      typeof value === 'string' &&
+      (value.startsWith('http') || value.startsWith('data:image'))
+    ) {
+      contexto[key] = value;
+      continue;
+    }
+
+    // 🔹 STRING / NUMBER / BOOLEAN
+    contexto[key] = value;
+  }
+
+  return contexto;
+}
+
+const puppeteer = require('puppeteer');
+
+async function gerarPdfDinamico({ html, variaveis }) {
+  const template = Handlebars.compile(html, { noEscape: true });
+
+  const contexto = processarVariaveis(variaveis);
+
+  const htmlFinal = template(contexto);
+
+  const browser = await puppeteer.launch({
+    headless: true,
+    args: ['--no-sandbox', '--disable-setuid-sandbox']
+  });
+
+  const page = await browser.newPage();
+  await page.setContent(htmlFinal, { waitUntil: 'networkidle0' });
+
+  const pdf = await page.pdf({
+    format: 'A4',
+    printBackground: true
+  });
+
+  await browser.close();
+
+  return pdf;
+}
+

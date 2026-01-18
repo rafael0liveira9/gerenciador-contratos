@@ -7,6 +7,8 @@ import templatesReducer from './templatesSlice';
 import contratosReducer from './contratosSlice';
 import variaveisReducer from './variaveisSlice';
 import blocosReducer from './blocosSlice';
+import paginasReducer from './paginasSlice';
+import bibliotecaReducer from './bibliotecaSlice';
 
 export const store = configureStore({
   reducer: {
@@ -17,7 +19,9 @@ export const store = configureStore({
     templates: templatesReducer,
     contratos: contratosReducer,
     variaveis: variaveisReducer,
-    blocos: blocosReducer
+    blocos: blocosReducer,
+    paginas: paginasReducer,
+    biblioteca: bibliotecaReducer
   }
 });
 

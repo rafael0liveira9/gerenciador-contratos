@@ -1,3 +1,6 @@
+import { createPortal } from 'react-dom';
+import theme from '../theme';
+
 function ContractPreview({ template, blocks, onClose }) {
   const renderBlockContent = (block) => {
     const blockStyles = block.styles
@@ -28,10 +31,10 @@ function ContractPreview({ template, blocks, onClose }) {
         content = block.rodape?.conteudo || '';
         break;
       case 'TITULO':
-        content = 'Titulo';
+        content = block.conteudo || '';
         break;
       case 'OBSERVACAO':
-        content = 'Observacao';
+        content = block.conteudo || '';
         break;
       default:
         content = '';
@@ -46,31 +49,67 @@ function ContractPreview({ template, blocks, onClose }) {
     );
   };
 
-  const handlePrint = () => {
-    window.print();
-  };
+  const modalContent = (
+    <div style={{
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: 'rgba(0, 0, 0, 0.85)',
+      zIndex: 9999,
+      overflow: 'hidden'
+    }}>
+      {/* Close button */}
+      <button
+        onClick={onClose}
+        style={{
+          position: 'absolute',
+          top: '20px',
+          right: '20px',
+          width: '40px',
+          height: '40px',
+          border: 'none',
+          borderRadius: '50%',
+          cursor: 'pointer',
+          fontSize: '20px',
+          fontWeight: 'bold',
+          backgroundColor: 'rgba(255, 255, 255, 0.9)',
+          color: '#333',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)',
+          zIndex: 10000
+        }}
+      >
+        ×
+      </button>
 
-  return (
-    <div className="contract-preview">
-      <div className="preview-header no-print">
-        <h3>Visualizacao</h3>
-        <div className="preview-actions">
-          <button onClick={handlePrint} className="btn-print">
-            Imprimir
-          </button>
-          <button onClick={onClose} className="btn-close">
-            Fechar
-          </button>
-        </div>
-      </div>
-
-      <div className="preview-document">
-        <div className="document-content">
+      {/* Document area */}
+      <div style={{
+        height: '100%',
+        overflow: 'auto',
+        padding: '32px',
+        display: 'flex',
+        justifyContent: 'center'
+      }}>
+        <div style={{
+          backgroundColor: '#fff',
+          padding: '48px',
+          maxWidth: '800px',
+          width: '100%',
+          minHeight: '1000px',
+          boxShadow: '0 4px 24px rgba(0, 0, 0, 0.3)',
+          color: '#000'
+        }}>
           {blocks.map(block => renderBlockContent(block))}
         </div>
       </div>
     </div>
   );
+
+  return createPortal(modalContent, document.body);
 }
 
 export default ContractPreview;

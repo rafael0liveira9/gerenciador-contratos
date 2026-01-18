@@ -106,6 +106,16 @@ const blocosSlice = createSlice({
       })
       .addCase(deleteBloco.fulfilled, (state, action) => {
         state.items = state.items.filter(b => b.id !== action.payload);
+      })
+      .addCase(reorderBlocos.fulfilled, (state, action) => {
+        // action.payload is [{id, ordem}, ...]
+        const orderMap = {};
+        action.payload.forEach(b => { orderMap[b.id] = b.ordem; });
+        state.items = state.items.map(item => ({
+          ...item,
+          ordem: orderMap[item.id] ?? item.ordem
+        }));
+        state.items.sort((a, b) => a.ordem - b.ordem);
       });
   }
 });

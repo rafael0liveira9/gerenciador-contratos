@@ -27,7 +27,26 @@ const getByEmpresa = async (req, res) => {
       },
       orderBy: { dataCriacao: 'desc' }
     });
-    res.json(templates);
+
+    // Calcular vigência e ordenar
+    const now = new Date();
+    const templatesComVigencia = templates.map(template => {
+      const inicioVigencia = template.inicioVigencia ? new Date(template.inicioVigencia) : null;
+      const fimVigencia = template.fimVigencia ? new Date(template.fimVigencia) : null;
+
+      const vigente = inicioVigencia && inicioVigencia <= now && (!fimVigencia || fimVigencia >= now);
+
+      return { ...template, vigente };
+    });
+
+    // Ordenar: vigentes primeiro, depois por data de criação
+    templatesComVigencia.sort((a, b) => {
+      if (a.vigente && !b.vigente) return -1;
+      if (!a.vigente && b.vigente) return 1;
+      return new Date(b.dataCriacao) - new Date(a.dataCriacao);
+    });
+
+    res.json(templatesComVigencia);
   } catch (error) {
     console.error('Erro ao buscar templates:', error);
     res.status(500).json({ error: 'Erro ao buscar templates' });
@@ -70,18 +89,25 @@ const getById = async (req, res) => {
 
 const create = async (req, res) => {
   try {
-    const { empresaId, nome, descricao, inicioVigencia, fimVigencia } = req.body;
+    const { empresaId, nome, descricao, versao, inicioVigencia, fimVigencia } = req.body;
     const template = await prisma.template.create({
       data: {
         empresaId: parseInt(empresaId),
         nome,
-        descricao,
-        versao: 1,
+        descricao: descricao || null,
+        versao: versao ? parseInt(versao) : 1,
         inicioVigencia: inicioVigencia ? new Date(inicioVigencia) : new Date(),
-        fimVigencia: fimVigencia ? new Date(fimVigencia) : null
+        fimVigencia: fimVigencia ? new Date(fimVigencia) : null,
+        paginas: {
+          create: {
+            ordem: 1
+          }
+        }
       },
       include: {
-        paginas: true
+        paginas: {
+          orderBy: { ordem: 'asc' }
+        }
       }
     });
     res.status(201).json(template);
@@ -94,12 +120,13 @@ const create = async (req, res) => {
 const update = async (req, res) => {
   try {
     const { id } = req.params;
-    const { nome, descricao, inicioVigencia, fimVigencia } = req.body;
+    const { nome, descricao, versao, inicioVigencia, fimVigencia } = req.body;
     const template = await prisma.template.update({
       where: { id: parseInt(id) },
       data: {
         nome,
         descricao,
+        versao: versao ? parseInt(versao) : undefined,
         inicioVigencia: inicioVigencia ? new Date(inicioVigencia) : undefined,
         fimVigencia: fimVigencia ? new Date(fimVigencia) : null
       },

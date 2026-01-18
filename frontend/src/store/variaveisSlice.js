@@ -11,26 +11,38 @@ export const fetchVariaveis = createAsyncThunk(
   }
 );
 
+export const searchVariaveis = createAsyncThunk(
+  'variaveis/search',
+  async ({ empresaId, search }) => {
+    const response = await fetch(`${API_URL}/variaveis/empresa/${empresaId}/search?q=${encodeURIComponent(search)}`);
+    if (!response.ok) throw new Error('Erro ao buscar variaveis');
+    return response.json();
+  }
+);
+
 export const createVariavel = createAsyncThunk(
   'variaveis/create',
-  async ({ empresaId, label, tag }) => {
+  async ({ empresaId, tag }, { rejectWithValue }) => {
     const response = await fetch(`${API_URL}/variaveis`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ empresaId, label, tag })
+      body: JSON.stringify({ empresaId, tag })
     });
-    if (!response.ok) throw new Error('Erro ao criar variavel');
+    if (!response.ok) {
+      const data = await response.json();
+      return rejectWithValue(data.error || 'Erro ao criar variavel');
+    }
     return response.json();
   }
 );
 
 export const updateVariavel = createAsyncThunk(
   'variaveis/update',
-  async ({ id, label, tag }) => {
+  async ({ id, tag }) => {
     const response = await fetch(`${API_URL}/variaveis/${id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ label, tag })
+      body: JSON.stringify({ tag })
     });
     if (!response.ok) throw new Error('Erro ao atualizar variavel');
     return response.json();
@@ -72,6 +84,18 @@ const variaveisSlice = createSlice({
         state.items = action.payload;
       })
       .addCase(fetchVariaveis.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.error.message;
+      })
+      .addCase(searchVariaveis.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(searchVariaveis.fulfilled, (state, action) => {
+        state.loading = false;
+        state.items = action.payload;
+      })
+      .addCase(searchVariaveis.rejected, (state, action) => {
         state.loading = false;
         state.error = action.error.message;
       })

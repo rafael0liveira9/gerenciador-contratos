@@ -8,183 +8,189 @@ datasource db {
 }
 
 model Empresa {
-  id            Int       @id @default(autoincrement())
-  documento     String    @db.VarChar(20)
-  nome          String    @db.VarChar(255)
-  slug          String    @unique @db.VarChar(100)
-  secret        String    @db.VarChar(255)
-  ativo         Boolean   @default(true)
-  dataCriacao   DateTime  @default(now()) @map("data_criacao")
-  dataEdicao    DateTime  @updatedAt @map("data_edicao")
-  dataExclusao  DateTime? @map("data_exclusao")
-
-  responsaveis  Responsavel[]
-  templates     Template[]
-  contratos     Contrato[]
-  clausulas     Clausula[]
-  cabecalhos    Cabecalho[]
-  rodapes       Rodape[]
-  variaveis     Variavel[]
+  id           Int           @id @default(autoincrement())
+  documento    String        @db.VarChar(20)
+  nome         String        @db.VarChar(255)
+  slug         String        @unique @db.VarChar(100)
+  secret       String        @db.VarChar(255)
+  ativo        Boolean       @default(true)
+  dataCriacao  DateTime      @default(now()) @map("data_criacao")
+  dataEdicao   DateTime?     @updatedAt @map("data_edicao")
+  dataExclusao DateTime?     @map("data_exclusao")
+  cabecalhos   Cabecalho[]
+  clausulas    Clausula[]
+  documentos   Documento[]
+  responsaveis Responsavel[]
+  rodapes      Rodape[]
+  templates    Template[]
+  variaveis    Variavel[]
 
   @@map("empresas")
 }
 
 model Responsavel {
-  id            Int       @id @default(autoincrement())
-  empresaId     Int       @map("empresa_id")
-  nome          String    @db.VarChar(255)
-  cpf           String    @db.VarChar(14)
-  telefone      String    @db.VarChar(20)
-  email         String    @db.VarChar(255)
-  dataCriacao   DateTime  @default(now()) @map("data_criacao")
-  dataEdicao    DateTime  @updatedAt @map("data_edicao")
-  dataExclusao  DateTime? @map("data_exclusao")
+  id           Int       @id @default(autoincrement())
+  empresaId    Int       @map("empresa_id")
+  nome         String    @db.VarChar(255)
+  cpf          String    @db.VarChar(14)
+  telefone     String    @db.VarChar(20)
+  email        String    @db.VarChar(255)
+  dataCriacao  DateTime  @default(now()) @map("data_criacao")
+  dataEdicao   DateTime? @updatedAt @map("data_edicao")
+  dataExclusao DateTime? @map("data_exclusao")
+  empresa      Empresa   @relation(fields: [empresaId], references: [id], onDelete: Cascade)
 
-  empresa       Empresa   @relation(fields: [empresaId], references: [id], onDelete: Cascade)
-
+  @@index([empresaId], map: "responsaveis_empresa_id_fkey")
   @@map("responsaveis")
 }
 
 model Template {
-  id              Int       @id @default(autoincrement())
-  empresaId       Int       @map("empresa_id")
-  versao          Int       @default(1)
-  nome            String    @db.VarChar(255)
-  descricao       String?   @db.Text
-  dataCriacao     DateTime  @default(now()) @map("data_criacao")
-  dataEdicao      DateTime? @updatedAt @map("data_edicao")
-  dataExclusao    DateTime? @map("data_exclusao")
-  inicioVigencia  DateTime  @default(now()) @map("inicio_vigencia")
-  fimVigencia     DateTime? @map("fim_vigencia")
+  id             Int        @id @default(autoincrement())
+  empresaId      Int        @map("empresa_id")
+  versao         Int        @default(1)
+  nome           String     @db.VarChar(255)
+  descricao      String?    @db.Text
+  dataCriacao    DateTime   @default(now()) @map("data_criacao")
+  dataEdicao     DateTime?  @updatedAt @map("data_edicao")
+  dataExclusao   DateTime?  @map("data_exclusao")
+  inicioVigencia DateTime   @default(now()) @map("inicio_vigencia")
+  fimVigencia    DateTime?  @map("fim_vigencia")
+  documentos     Documento[]
+  paginas        Pagina[]
+  empresa        Empresa    @relation(fields: [empresaId], references: [id], onDelete: Cascade)
 
-  empresa         Empresa   @relation(fields: [empresaId], references: [id], onDelete: Cascade)
-  paginas         Pagina[]
-  contratos       Contrato[]
-
+  @@index([empresaId], map: "templates_empresa_id_fkey")
   @@map("templates")
 }
 
 model Pagina {
-  id            Int       @id @default(autoincrement())
-  templateId    Int       @map("template_id")
-  ordem         Int
-  conteudo      String?   @db.Text
-  ativo         Boolean   @default(true)
-  dataCriacao   DateTime  @default(now()) @map("data_criacao")
-  dataExclusao  DateTime? @map("data_exclusao")
+  id           Int       @id @default(autoincrement())
+  templateId   Int       @map("template_id")
+  ordem        Int
+  conteudo     String?   @db.Text
+  ativo        Boolean   @default(true)
+  dataCriacao  DateTime  @default(now()) @map("data_criacao")
+  dataExclusao DateTime? @map("data_exclusao")
+  blocos       Bloco[]
+  template     Template  @relation(fields: [templateId], references: [id], onDelete: Cascade)
 
-  template      Template  @relation(fields: [templateId], references: [id], onDelete: Cascade)
-  blocos        Bloco[]
-
+  @@index([templateId], map: "paginas_template_id_fkey")
   @@map("paginas")
 }
 
 model Bloco {
-  id            Int       @id @default(autoincrement())
-  paginaId      Int       @map("pagina_id")
-  clausulaId    Int?      @map("clausula_id")
-  cabecalhoId   Int?      @map("cabecalho_id")
-  rodapeId      Int?      @map("rodape_id")
-  ordem         Int
-  level         Int       @default(1)
-  numeracao     String?   @db.VarChar(50)
-  htmlTag       String    @default("p") @map("html_tag") @db.VarChar(20)
-  styles        String?   @db.Text
-  tipo          TipoBloco
-  dataCriacao   DateTime  @default(now()) @map("data_criacao")
-  dataEdicao    DateTime? @updatedAt @map("data_edicao")
+  id          Int        @id @default(autoincrement())
+  paginaId    Int        @map("pagina_id")
+  clausulaId  Int?       @map("clausula_id")
+  cabecalhoId Int?       @map("cabecalho_id")
+  rodapeId    Int?       @map("rodape_id")
+  ordem       Int
+  level       Int        @default(1)
+  numeracao   String?    @db.VarChar(50)
+  htmlTag     String     @default("p") @map("html_tag") @db.VarChar(20)
+  styles      String?    @db.Text
+  conteudo    String?    @db.Text
+  tipo        TipoBloco
+  dataCriacao DateTime   @default(now()) @map("data_criacao")
+  dataEdicao  DateTime?  @updatedAt @map("data_edicao")
+  cabecalho   Cabecalho? @relation(fields: [cabecalhoId], references: [id])
+  clausula    Clausula?  @relation(fields: [clausulaId], references: [id])
+  pagina      Pagina     @relation(fields: [paginaId], references: [id], onDelete: Cascade)
+  rodape      Rodape?    @relation(fields: [rodapeId], references: [id])
 
-  pagina        Pagina    @relation(fields: [paginaId], references: [id], onDelete: Cascade)
-  clausula      Clausula? @relation(fields: [clausulaId], references: [id])
-  cabecalho     Cabecalho? @relation(fields: [cabecalhoId], references: [id])
-  rodape        Rodape?   @relation(fields: [rodapeId], references: [id])
-
+  @@index([cabecalhoId], map: "blocos_cabecalho_id_fkey")
+  @@index([clausulaId], map: "blocos_clausula_id_fkey")
+  @@index([paginaId], map: "blocos_pagina_id_fkey")
+  @@index([rodapeId], map: "blocos_rodape_id_fkey")
   @@map("blocos")
 }
 
 model Clausula {
-  id            Int       @id @default(autoincrement())
-  empresaId     Int       @map("empresa_id")
-  parentId      Int?      @map("parent_id")
-  nome          String    @db.VarChar(255)
-  conteudo      String    @db.Text
-  versao        Int       @default(1)
-  dataCriacao   DateTime  @default(now()) @map("data_criacao")
-  dataEdicao    DateTime? @updatedAt @map("data_edicao")
-  dataExclusao  DateTime? @map("data_exclusao")
+  id           Int        @id @default(autoincrement())
+  empresaId    Int        @map("empresa_id")
+  parentId     Int?       @map("parent_id")
+  nome         String     @db.VarChar(255)
+  conteudo     String     @db.Text
+  versao       Int        @default(1)
+  dataCriacao  DateTime   @default(now()) @map("data_criacao")
+  dataEdicao   DateTime?  @updatedAt @map("data_edicao")
+  dataExclusao DateTime?  @map("data_exclusao")
+  blocos       Bloco[]
+  empresa      Empresa    @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  parent       Clausula?  @relation("ClausulaVersions", fields: [parentId], references: [id])
+  versions     Clausula[] @relation("ClausulaVersions")
 
-  empresa       Empresa   @relation(fields: [empresaId], references: [id], onDelete: Cascade)
-  parent        Clausula? @relation("ClausulaVersions", fields: [parentId], references: [id])
-  versions      Clausula[] @relation("ClausulaVersions")
-  blocos        Bloco[]
-
+  @@index([empresaId], map: "clausulas_empresa_id_fkey")
+  @@index([parentId], map: "clausulas_parent_id_fkey")
   @@map("clausulas")
 }
 
 model Cabecalho {
-  id            Int       @id @default(autoincrement())
-  empresaId     Int       @map("empresa_id")
-  parentId      Int?      @map("parent_id")
-  nome          String    @db.VarChar(255)
-  conteudo      String    @db.Text
-  versao        Int       @default(1)
-  dataCriacao   DateTime  @default(now()) @map("data_criacao")
-  dataEdicao    DateTime? @updatedAt @map("data_edicao")
-  dataExclusao  DateTime? @map("data_exclusao")
+  id           Int         @id @default(autoincrement())
+  empresaId    Int         @map("empresa_id")
+  parentId     Int?        @map("parent_id")
+  nome         String      @db.VarChar(255)
+  conteudo     String      @db.Text
+  versao       Int         @default(1)
+  dataCriacao  DateTime    @default(now()) @map("data_criacao")
+  dataEdicao   DateTime?   @updatedAt @map("data_edicao")
+  dataExclusao DateTime?   @map("data_exclusao")
+  blocos       Bloco[]
+  empresa      Empresa     @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  parent       Cabecalho?  @relation("CabecalhoVersions", fields: [parentId], references: [id])
+  versions     Cabecalho[] @relation("CabecalhoVersions")
 
-  empresa       Empresa   @relation(fields: [empresaId], references: [id], onDelete: Cascade)
-  parent        Cabecalho? @relation("CabecalhoVersions", fields: [parentId], references: [id])
-  versions      Cabecalho[] @relation("CabecalhoVersions")
-  blocos        Bloco[]
-
+  @@index([empresaId], map: "cabecalhos_empresa_id_fkey")
+  @@index([parentId], map: "cabecalhos_parent_id_fkey")
   @@map("cabecalhos")
 }
 
 model Rodape {
-  id            Int       @id @default(autoincrement())
-  empresaId     Int       @map("empresa_id")
-  parentId      Int?      @map("parent_id")
-  nome          String    @db.VarChar(255)
-  conteudo      String    @db.Text
-  versao        Int       @default(1)
-  dataCriacao   DateTime  @default(now()) @map("data_criacao")
-  dataEdicao    DateTime? @updatedAt @map("data_edicao")
-  dataExclusao  DateTime? @map("data_exclusao")
+  id           Int       @id @default(autoincrement())
+  empresaId    Int       @map("empresa_id")
+  parentId     Int?      @map("parent_id")
+  nome         String    @db.VarChar(255)
+  conteudo     String    @db.Text
+  versao       Int       @default(1)
+  dataCriacao  DateTime  @default(now()) @map("data_criacao")
+  dataEdicao   DateTime? @updatedAt @map("data_edicao")
+  dataExclusao DateTime? @map("data_exclusao")
+  blocos       Bloco[]
+  empresa      Empresa   @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  parent       Rodape?   @relation("RodapeVersions", fields: [parentId], references: [id])
+  versions     Rodape[]  @relation("RodapeVersions")
 
-  empresa       Empresa   @relation(fields: [empresaId], references: [id], onDelete: Cascade)
-  parent        Rodape?   @relation("RodapeVersions", fields: [parentId], references: [id])
-  versions      Rodape[]  @relation("RodapeVersions")
-  blocos        Bloco[]
-
+  @@index([empresaId], map: "rodapes_empresa_id_fkey")
+  @@index([parentId], map: "rodapes_parent_id_fkey")
   @@map("rodapes")
 }
 
-model Contrato {
-  id              Int       @id @default(autoincrement())
-  empresaId       Int       @map("empresa_id")
-  templateId      Int       @map("template_id")
-  conteudo        String    @db.LongText
-  dataEnviado     DateTime  @default(now()) @map("data_enviado")
-  dataAssinado    DateTime? @map("data_assinado")
-  dataConcluido   DateTime? @map("data_concluido")
-  dataCancelado   DateTime? @map("data_cancelado")
+model Documento {
+  id            Int       @id @default(autoincrement())
+  empresaId     Int       @map("empresa_id")
+  templateId    Int       @map("template_id")
+  pdfPath       String    @map("pdf_path") @db.VarChar(500)
+  dataEnviado   DateTime  @default(now()) @map("data_enviado")
+  dataAssinado  DateTime? @map("data_assinado")
+  dataConcluido DateTime? @map("data_concluido")
+  dataCancelado DateTime? @map("data_cancelado")
+  empresa       Empresa   @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  template      Template  @relation(fields: [templateId], references: [id])
 
-  empresa         Empresa   @relation(fields: [empresaId], references: [id], onDelete: Cascade)
-  template        Template  @relation(fields: [templateId], references: [id])
-
-  @@map("contratos")
+  @@index([empresaId], map: "documentos_empresa_id_fkey")
+  @@index([templateId], map: "documentos_template_id_fkey")
+  @@map("documentos")
 }
 
 model Variavel {
-  id            Int       @id @default(autoincrement())
-  empresaId     Int       @map("empresa_id")
-  label         String    @db.VarChar(255)
-  tag           String    @db.VarChar(100)
-  dataCriacao   DateTime  @default(now()) @map("data_criacao")
-  dataEdicao    DateTime? @updatedAt @map("data_edicao")
+  id          Int       @id @default(autoincrement())
+  empresaId   Int       @map("empresa_id")
+  tag         String    @db.VarChar(100)
+  dataCriacao DateTime  @default(now()) @map("data_criacao")
+  dataEdicao  DateTime? @updatedAt @map("data_edicao")
+  empresa     Empresa   @relation(fields: [empresaId], references: [id], onDelete: Cascade)
 
-  empresa       Empresa   @relation(fields: [empresaId], references: [id], onDelete: Cascade)
-
+  @@index([empresaId], map: "variaveis_empresa_id_fkey")
   @@map("variaveis")
 }
 

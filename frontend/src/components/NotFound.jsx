@@ -1,59 +1,63 @@
-import { useParams, useNavigate } from 'react-router-dom';
+import { mdiAlertCircleOutline } from '@mdi/js';
+import Icon from '@mdi/react';
+import theme from '../theme';
 
-function NotFound() {
-  const { slug } = useParams();
-  const navigate = useNavigate();
+export default function NotFound() {
+  const styles = {
+    page: {
+      // background: theme.colors.gradients.dark
+    },
+    container: {
+      backgroundColor: theme.colors.background.paper,
+      boxShadow: '0 10px 38px rgba(0, 0, 0, 0.4)'
+    },
+    code: {
+      color: theme.colors.primary.main
+    },
+    title: {
+      color: theme.colors.text.primary
+    },
+    message: {
+      color: theme.colors.text.secondary
+    },
+    suggestions: {
+      backgroundColor: theme.colors.background.subtle,
+      color: theme.colors.text.secondary
+    },
+    suggestionsList: {
+      color: theme.colors.text.muted
+    }
+  };
 
   return (
-    <div className="not-found-page">
-      <div className="not-found-content">
-        <div className="not-found-illustration">
-          <div className="ghost">
-            <div className="ghost-body">
-              <div className="ghost-eyes">
-                <div className="eye"></div>
-                <div className="eye"></div>
-              </div>
-              <div className="ghost-mouth"></div>
-            </div>
-            <div className="ghost-tail">
-              <div className="wave"></div>
-              <div className="wave"></div>
-              <div className="wave"></div>
-            </div>
-          </div>
-          <div className="shadow"></div>
+    <div className="error-page" style={styles.page}>
+      <div className="error-page-container" style={styles.container}>
+        <div className="error-page-icon-wrapper">
+          <Icon
+            path={mdiAlertCircleOutline}
+            size={8}
+            color={theme.colors.primary.main}
+            style={{ opacity: 0.2 }}
+          />
+          <h1 className="error-page-code" style={styles.code}>404</h1>
         </div>
 
-        <h1 className="not-found-code">404</h1>
-        <h2 className="not-found-title">Oops! Empresa nao encontrada</h2>
+        <h2 className="error-page-title" style={styles.title}>Página não encontrada</h2>
 
-        <p className="not-found-message">
-          A empresa <strong>"{slug}"</strong> nao existe ou foi removida.
-          <br />
-          Parece que esse fantasma engoliu a pagina que voce procura!
+        <p className="error-page-message" style={styles.message}>
+          Ops! A página que você está procurando não existe ou foi movida.
+          Verifique o endereço e tente novamente.
         </p>
 
-        <div className="not-found-actions">
-          <button onClick={() => navigate(-1)} className="btn-back">
-            ← Voltar
-          </button>
-          <button onClick={() => navigate('/select')} className="btn-home">
-            Ir para Select
-          </button>
-        </div>
-
-        <div className="not-found-suggestions">
+        <div className="error-page-suggestions" style={styles.suggestions}>
           <p>Verifique se:</p>
-          <ul>
-            <li>O slug da empresa esta correto</li>
-            <li>A empresa ainda esta ativa no sistema</li>
-            <li>Voce tem permissao para acessar</li>
+          <ul style={styles.suggestionsList}>
+            <li>O slug da empresa está correto.</li>
+            <li>A empresa ainda está ativa no sistema.</li>
+            <li>Você tem permissão para acessar.</li>
           </ul>
         </div>
       </div>
     </div>
   );
 }
-
-export default NotFound;

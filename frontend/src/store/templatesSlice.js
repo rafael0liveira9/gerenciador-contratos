@@ -22,11 +22,11 @@ export const fetchTemplateById = createAsyncThunk(
 
 export const createTemplate = createAsyncThunk(
   'templates/create',
-  async ({ empresaId, nome, descricao }) => {
+  async ({ empresaId, nome, descricao, versao, inicioVigencia, fimVigencia }) => {
     const response = await fetch(`${API_URL}/templates`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ empresaId, nome, descricao })
+      body: JSON.stringify({ empresaId, nome, descricao, versao, inicioVigencia, fimVigencia })
     });
     if (!response.ok) throw new Error('Erro ao criar template');
     return response.json();
@@ -35,11 +35,11 @@ export const createTemplate = createAsyncThunk(
 
 export const updateTemplate = createAsyncThunk(
   'templates/update',
-  async ({ id, nome, descricao }) => {
+  async ({ id, nome, descricao, versao, inicioVigencia, fimVigencia }) => {
     const response = await fetch(`${API_URL}/templates/${id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ nome, descricao })
+      body: JSON.stringify({ nome, descricao, versao, inicioVigencia, fimVigencia })
     });
     if (!response.ok) throw new Error('Erro ao atualizar template');
     return response.json();

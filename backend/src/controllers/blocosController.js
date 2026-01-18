@@ -45,7 +45,7 @@ const getById = async (req, res) => {
 
 const create = async (req, res) => {
   try {
-    const { paginaId, clausulaId, cabecalhoId, rodapeId, ordem, level, numeracao, htmlTag, styles, tipo } = req.body;
+    const { paginaId, clausulaId, cabecalhoId, rodapeId, ordem, level, numeracao, htmlTag, styles, tipo, conteudo } = req.body;
 
     const maxOrdem = await prisma.bloco.aggregate({
       where: { paginaId: parseInt(paginaId) },
@@ -63,6 +63,7 @@ const create = async (req, res) => {
         numeracao,
         htmlTag: htmlTag || 'p',
         styles: styles ? JSON.stringify(styles) : null,
+        conteudo: conteudo || null,
         tipo
       },
       include: {
@@ -81,20 +82,59 @@ const create = async (req, res) => {
 const update = async (req, res) => {
   try {
     const { id } = req.params;
-    const { clausulaId, cabecalhoId, rodapeId, ordem, level, numeracao, htmlTag, styles, tipo } = req.body;
+    const { clausulaId, cabecalhoId, rodapeId, ordem, level, numeracao, htmlTag, styles, tipo, conteudo } = req.body;
+
+    // Buscar o bloco atual para saber o tipo e a entidade associada
+    const blocoAtual = await prisma.bloco.findUnique({
+      where: { id: parseInt(id) },
+      include: { clausula: true, cabecalho: true, rodape: true }
+    });
+
+    if (!blocoAtual) {
+      return res.status(404).json({ error: 'Bloco não encontrado' });
+    }
+
+    let updateData = {
+      clausulaId: clausulaId !== undefined ? (clausulaId ? parseInt(clausulaId) : null) : undefined,
+      cabecalhoId: cabecalhoId !== undefined ? (cabecalhoId ? parseInt(cabecalhoId) : null) : undefined,
+      rodapeId: rodapeId !== undefined ? (rodapeId ? parseInt(rodapeId) : null) : undefined,
+      ordem,
+      level,
+      numeracao,
+      htmlTag,
+      styles: styles ? JSON.stringify(styles) : undefined,
+      tipo
+    };
+
+    // Se conteudo foi enviado, atualizar a entidade associada ou salvar direto no bloco
+    if (conteudo !== undefined) {
+      if (blocoAtual.tipo === 'TITULO' || blocoAtual.tipo === 'OBSERVACAO') {
+        // Para TITULO e OBSERVACAO, salva direto no bloco
+        updateData.conteudo = conteudo;
+      } else if (blocoAtual.tipo === 'CLAUSULA' && blocoAtual.clausulaId) {
+        // Atualizar a cláusula existente diretamente
+        await prisma.clausula.update({
+          where: { id: blocoAtual.clausulaId },
+          data: { conteudo: conteudo }
+        });
+      } else if (blocoAtual.tipo === 'CABECALHO' && blocoAtual.cabecalhoId) {
+        // Atualizar o cabeçalho existente diretamente
+        await prisma.cabecalho.update({
+          where: { id: blocoAtual.cabecalhoId },
+          data: { conteudo: conteudo }
+        });
+      } else if (blocoAtual.tipo === 'RODAPE' && blocoAtual.rodapeId) {
+        // Atualizar o rodapé existente diretamente
+        await prisma.rodape.update({
+          where: { id: blocoAtual.rodapeId },
+          data: { conteudo: conteudo }
+        });
+      }
+    }
+
     const bloco = await prisma.bloco.update({
       where: { id: parseInt(id) },
-      data: {
-        clausulaId: clausulaId !== undefined ? (clausulaId ? parseInt(clausulaId) : null) : undefined,
-        cabecalhoId: cabecalhoId !== undefined ? (cabecalhoId ? parseInt(cabecalhoId) : null) : undefined,
-        rodapeId: rodapeId !== undefined ? (rodapeId ? parseInt(rodapeId) : null) : undefined,
-        ordem,
-        level,
-        numeracao,
-        htmlTag,
-        styles: styles ? JSON.stringify(styles) : undefined,
-        tipo
-      },
+      data: updateData,
       include: {
         clausula: true,
         cabecalho: true,
