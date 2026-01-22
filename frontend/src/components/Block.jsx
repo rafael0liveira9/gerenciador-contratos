@@ -25,9 +25,8 @@ function Block({ block, onUpdate, onDelete, onMoveUp, onMoveDown, isFirst, isLas
 
   const style = {
     marginLeft: `${(block.level - 1) * 24}px`,
-    backgroundColor: theme.colors.background.paper,
-    borderLeftColor: blockTypeColors[block.tipo] || theme.colors.primary.main,
-    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06)'
+    border: '3px solid #ffffff',
+    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06)',
   };
 
   const contentStyle = {
@@ -190,7 +189,7 @@ function Block({ block, onUpdate, onDelete, onMoveUp, onMoveDown, isFirst, isLas
       color: theme.colors.text.muted
     },
     content: {
-      color: theme.colors.text.primary
+      color: theme.colors.text.primary,
     }
   };
 
@@ -238,15 +237,17 @@ function Block({ block, onUpdate, onDelete, onMoveUp, onMoveDown, isFirst, isLas
             styles={editStyles}
             onStylesChange={setEditStyles}
           />
-          <div className="edit-actions">
-            <button onClick={handleSave} className="save-btn" style={blockInlineStyles.saveBtn}>Salvar</button>
-            <button onClick={handleCancel} style={blockInlineStyles.cancelBtn}>Cancelar</button>
+          <div style={{display:'flex', flexDirection: 'column', padding: '10px 16px 16px 16px'}}>
+            <div className="edit-actions">
+              <button onClick={handleSave} className="save-btn" style={blockInlineStyles.saveBtn}>Salvar</button>
+              <button onClick={handleCancel} style={blockInlineStyles.cancelBtn}>Cancelar</button>
+            </div>
+            {block.tipo === 'CLAUSULA' && (
+              <small className="edit-note" style={blockInlineStyles.editNote}>
+                Ao salvar, uma nova versao da clausula sera criada.
+              </small>
+            )}
           </div>
-          {block.tipo === 'CLAUSULA' && (
-            <small className="edit-note" style={blockInlineStyles.editNote}>
-              Ao salvar, uma nova versao da clausula sera criada.
-            </small>
-          )}
         </div>
       ) : (
         <div className="block-content" onClick={handleEdit} style={blockInlineStyles.content}>

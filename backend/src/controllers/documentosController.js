@@ -6,7 +6,6 @@ const path = require('path');
 
 const prisma = new PrismaClient();
 
-// Gerar documento PDF
 const gerar = async (req, res) => {
   try {
     const { empresaId, templateId, template, variaveis } = req.body;
@@ -15,16 +14,13 @@ const gerar = async (req, res) => {
       return res.status(400).json({ error: 'Dados incompletos' });
     }
 
-    // Criar diretório se não existir
     const docsDir = path.join(__dirname, '../../public/documentos', String(empresaId));
     if (!fs.existsSync(docsDir)) {
       fs.mkdirSync(docsDir, { recursive: true });
     }
 
-    // Compilar template com Handlebars
     const compiledTemplate = Handlebars.compile(template.content, { noEscape: true });
 
-    // Processar variáveis
     const contexto = {};
     for (const [key, value] of Object.entries(variaveis || {})) {
       contexto[key] = new Handlebars.SafeString(value);
@@ -32,7 +28,6 @@ const gerar = async (req, res) => {
 
     const htmlFinal = compiledTemplate(contexto);
 
-    // HTML completo com estilos
     const htmlCompleto = `
       <!DOCTYPE html>
       <html>
@@ -78,7 +73,6 @@ const gerar = async (req, res) => {
       </html>
     `;
 
-    // Gerar PDF com Puppeteer
     const browser = await puppeteer.launch({
       headless: true,
       args: ['--no-sandbox', '--disable-setuid-sandbox']
@@ -100,15 +94,12 @@ const gerar = async (req, res) => {
 
     await browser.close();
 
-    // Salvar PDF
     const fileName = `documento_${Date.now()}.pdf`;
     const filePath = path.join(docsDir, fileName);
     fs.writeFileSync(filePath, pdfBuffer);
 
-    // Caminho relativo para salvar no banco
     const pdfPath = `/public/documentos/${empresaId}/${fileName}`;
 
-    // Salvar no banco
     const documento = await prisma.documento.create({
       data: {
         empresaId: parseInt(empresaId),
@@ -128,7 +119,6 @@ const gerar = async (req, res) => {
   }
 };
 
-// Listar documentos por empresa
 const getByEmpresa = async (req, res) => {
   try {
     const { empresaId } = req.params;
@@ -144,7 +134,6 @@ const getByEmpresa = async (req, res) => {
   }
 };
 
-// Buscar documento por ID
 const getById = async (req, res) => {
   try {
     const { id } = req.params;
@@ -164,12 +153,10 @@ const getById = async (req, res) => {
   }
 };
 
-// Deletar documento
 const remove = async (req, res) => {
   try {
     const { id } = req.params;
 
-    // Buscar documento para pegar o caminho do arquivo
     const documento = await prisma.documento.findUnique({
       where: { id: parseInt(id) }
     });
@@ -178,13 +165,11 @@ const remove = async (req, res) => {
       return res.status(404).json({ error: 'Documento não encontrado' });
     }
 
-    // Deletar arquivo físico
     const filePath = path.join(__dirname, '../..', documento.pdfPath);
     if (fs.existsSync(filePath)) {
       fs.unlinkSync(filePath);
     }
 
-    // Deletar do banco
     await prisma.documento.delete({
       where: { id: parseInt(id) }
     });

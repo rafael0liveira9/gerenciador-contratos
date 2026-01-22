@@ -4,7 +4,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { useDroppable } from '@dnd-kit/core';
 import toast from 'react-hot-toast';
 import { selectCurrentTemplate, updateTemplate, fetchTemplateById, clearCurrentTemplate, fetchTemplates } from '../store/templatesSlice';
-import { selectCurrentEmpresa } from '../store';
+import { selectEmpresa } from '../store/empresaSlice';
 import { selectAllBlocos, updateBloco, deleteBloco, reorderBlocos } from '../store/blocosSlice';
 import { createPagina, updatePagina } from '../store/paginasSlice';
 import Block from './Block';
@@ -29,27 +29,23 @@ const defaultPageConfig = {
 function TemplateEditor() {
   const dispatch = useDispatch();
   const template = useSelector(selectCurrentTemplate);
-  const empresa = useSelector(selectCurrentEmpresa);
+  const empresa = useSelector(selectEmpresa);
   const blocos = useSelector(selectAllBlocos);
   const [showPreview, setShowPreview] = useState(false);
   const [showGenerateModal, setShowGenerateModal] = useState(false);
   const [currentPageIndex, setCurrentPageIndex] = useState(0);
 
-  // Estado local para config da página (usado apenas durante edição)
   const [localPageConfig, setLocalPageConfig] = useState(null);
 
-  // Ref para evitar criar página múltiplas vezes
   const creatingPageRef = useRef(false);
 
   const { setNodeRef, isOver } = useDroppable({
     id: 'template-drop-zone'
   });
 
-  // Dados derivados
   const paginas = template?.paginas || [];
   const currentPage = paginas[currentPageIndex];
 
-  // Auto-criar página se template não tiver nenhuma
   useEffect(() => {
     const createFirstPage = async () => {
       if (template && paginas.length === 0 && !creatingPageRef.current) {
@@ -66,7 +62,6 @@ function TemplateEditor() {
     createFirstPage();
   }, [template?.id, paginas.length, dispatch]);
 
-  // PageConfig derivado da página atual (com override local durante edição)
   const getPageConfig = () => {
     if (localPageConfig) return localPageConfig;
     const conteudo = currentPage?.conteudo;
@@ -110,14 +105,15 @@ function TemplateEditor() {
       height: '36px',
       borderRadius: '50%',
       border: 'none',
-      backgroundColor: theme.colors.error.main,
-      color: '#fff',
+      backgroundColor: theme.colors.background.subtle,
+      color: theme.colors.text.primary,
       fontSize: '20px',
       fontWeight: 'bold',
       cursor: 'pointer',
       display: 'flex',
       alignItems: 'center',
-      justifyContent: 'center'
+      justifyContent: 'center',
+      paddingBottom: 9
     },
     btnGenerate: {
       background: `linear-gradient(135deg, ${theme.colors.primary.main} 0%, ${theme.colors.primary.dark} 100%)`,
@@ -137,7 +133,8 @@ function TemplateEditor() {
       color: theme.colors.text.primary
     },
     label: {
-      color: theme.colors.text.muted
+      color: theme.colors.text.muted,
+      lineHeight: '14px'
     },
     value: {
       color: theme.colors.text.primary
@@ -147,7 +144,7 @@ function TemplateEditor() {
       backgroundColor: theme.colors.background.subtle
     },
     dates: {
-      borderTopColor: theme.colors.border.light
+      // borderTopColor: theme.colors.border.light
     },
     inlineEdit: {
       backgroundColor: theme.colors.background.paper,
@@ -190,7 +187,8 @@ function TemplateEditor() {
     },
     editorContent: {
       backgroundColor: theme.colors.background.subtle,
-      borderColor: theme.colors.border.light
+      borderColor: theme.colors.border.light,
+      boxShadow: '0 4px 16px rgba(0, 0, 0, 0.1)'
     },
     editorContentDragOver: {
       backgroundColor: theme.colors.states.hover,
@@ -207,7 +205,7 @@ function TemplateEditor() {
       <div className="template-editor empty" style={styles.empty}>
         <div className="empty-message" style={styles.emptyMessage}>
           <h3 style={styles.emptyTitle}>Selecione um template</h3>
-          <p style={styles.emptyText}>Escolha um template na lista à esquerda ou crie um novo</p>
+          <p style={styles.emptyText}>Escolha um template na lista à esquerda ou crie um novo.</p>
         </div>
       </div>
     );
@@ -254,12 +252,24 @@ function TemplateEditor() {
     dispatch(reorderBlocos(reorderedBlocos));
   };
 
-  const handleSave = () => {
-    toast.success('Template salvo com sucesso!');
-    if (empresa?.id) {
-      dispatch(fetchTemplates(empresa.id));
+  const handleSave = async () => {
+    try {
+
+      if (currentPage && localPageConfig) {
+        await dispatch(updatePagina({
+          id: currentPage.id,
+          conteudo: JSON.stringify(localPageConfig)
+        })).unwrap();
+      }
+
+      toast.success('Template salvo com sucesso!');
+      if (empresa?.id) {
+        dispatch(fetchTemplates(empresa.id));
+      }
+      dispatch(clearCurrentTemplate());
+    } catch (error) {
+      toast.error('Erro ao salvar template');
     }
-    dispatch(clearCurrentTemplate());
   };
 
   const handleClose = () => {
@@ -279,43 +289,6 @@ function TemplateEditor() {
 
   const handlePageConfigChange = (field, value) => {
     setLocalPageConfig({ ...pageConfig, [field]: value });
-  };
-
-  const handlePageConfigSave = async () => {
-    if (!currentPage) return;
-    const configToSave = localPageConfig || pageConfig;
-    // Só salva se houver mudança
-    const currentConfig = currentPage.conteudo ? JSON.parse(currentPage.conteudo) : {};
-    if (JSON.stringify(configToSave) === JSON.stringify({ ...defaultPageConfig, ...currentConfig })) {
-      setLocalPageConfig(null);
-      return;
-    }
-    try {
-      await dispatch(updatePagina({
-        id: currentPage.id,
-        conteudo: JSON.stringify(configToSave)
-      })).unwrap();
-      await dispatch(fetchTemplateById(template.id));
-      setLocalPageConfig(null);
-      toast.success('Configurações salvas!');
-    } catch (error) {
-      toast.error('Erro ao salvar configurações');
-    }
-  };
-
-  const handlePageConfigChangeAndSave = async (field, value) => {
-    const newConfig = { ...pageConfig, [field]: value };
-    if (!currentPage) return;
-    try {
-      await dispatch(updatePagina({
-        id: currentPage.id,
-        conteudo: JSON.stringify(newConfig)
-      })).unwrap();
-      await dispatch(fetchTemplateById(template.id));
-      toast.success('Configurações salvas!');
-    } catch (error) {
-      toast.error('Erro ao salvar configurações');
-    }
   };
 
   const sortedBlocos = [...blocos].sort((a, b) => a.ordem - b.ordem);
@@ -352,7 +325,7 @@ function TemplateEditor() {
             />
           </div>
           <div className="template-info-version">
-            <span className="label" style={styles.label}>Versão:</span>
+            <span className="label" style={styles.label}>V</span>
             <input
               type="number"
               className="inline-edit inline-edit--small"
@@ -361,6 +334,28 @@ function TemplateEditor() {
               min="1"
               style={styles.inlineEdit}
             />
+          </div>
+          <div className="template-dates" style={styles.dates}>
+            <div className="date-field">
+              <span className="label" style={styles.label}>Início da <br></br>Vigência:</span>
+              <input
+                type="date"
+                className="inline-edit"
+                value={getFieldValue('inicioVigencia')}
+                onChange={(e) => handleFieldChange('inicioVigencia', e.target.value)}
+                style={styles.inlineEdit}
+              />
+            </div>
+            <div className="date-field">
+              <span className="label" style={styles.label}>Fim da <br></br>Vigência:</span>
+              <input
+                type="date"
+                className="inline-edit"
+                value={getFieldValue('fimVigencia')}
+                onChange={(e) => handleFieldChange('fimVigencia', e.target.value)}
+                style={styles.inlineEdit}
+              />
+            </div>
           </div>
         </div>
 
@@ -373,32 +368,8 @@ function TemplateEditor() {
           style={styles.inlineEdit}
         />
 
-        <div className="template-dates" style={styles.dates}>
-          <div className="date-field">
-            <span className="label" style={styles.label}>Início da Vigência:</span>
-            <input
-              type="date"
-              className="inline-edit"
-              value={getFieldValue('inicioVigencia')}
-              onChange={(e) => handleFieldChange('inicioVigencia', e.target.value)}
-              style={styles.inlineEdit}
-            />
-          </div>
-          <div className="date-field">
-            <span className="label" style={styles.label}>Fim da Vigência:</span>
-            <input
-              type="date"
-              className="inline-edit"
-              value={getFieldValue('fimVigencia')}
-              onChange={(e) => handleFieldChange('fimVigencia', e.target.value)}
-              style={styles.inlineEdit}
-            />
-          </div>
-        </div>
-      </div>
+        <div style={{width:'100%', height:'1px', marginTop: 15, backgroundColor:theme.colors.background.subtle }}></div>
 
-      {/* Seção de Páginas */}
-      <div className="pages-section" style={styles.pagesSection}>
         <div className="pages-tabs">
           <span className="pages-label" style={styles.pagesLabel}>Páginas:</span>
           {paginas.map((pagina, index) => (
@@ -431,7 +402,6 @@ function TemplateEditor() {
                     title="Top"
                     value={pageConfig.marginTop}
                     onChange={(e) => handlePageConfigChange('marginTop', e.target.value)}
-                    onBlur={handlePageConfigSave}
                     style={styles.configInput}
                   />
                   <input
@@ -440,7 +410,6 @@ function TemplateEditor() {
                     title="Right"
                     value={pageConfig.marginRight}
                     onChange={(e) => handlePageConfigChange('marginRight', e.target.value)}
-                    onBlur={handlePageConfigSave}
                     style={styles.configInput}
                   />
                   <input
@@ -449,7 +418,6 @@ function TemplateEditor() {
                     title="Bottom"
                     value={pageConfig.marginBottom}
                     onChange={(e) => handlePageConfigChange('marginBottom', e.target.value)}
-                    onBlur={handlePageConfigSave}
                     style={styles.configInput}
                   />
                   <input
@@ -458,7 +426,6 @@ function TemplateEditor() {
                     title="Left"
                     value={pageConfig.marginLeft}
                     onChange={(e) => handlePageConfigChange('marginLeft', e.target.value)}
-                    onBlur={handlePageConfigSave}
                     style={styles.configInput}
                   />
                 </div>
@@ -472,7 +439,6 @@ function TemplateEditor() {
                     title="Top"
                     value={pageConfig.paddingTop}
                     onChange={(e) => handlePageConfigChange('paddingTop', e.target.value)}
-                    onBlur={handlePageConfigSave}
                     style={styles.configInput}
                   />
                   <input
@@ -481,7 +447,6 @@ function TemplateEditor() {
                     title="Right"
                     value={pageConfig.paddingRight}
                     onChange={(e) => handlePageConfigChange('paddingRight', e.target.value)}
-                    onBlur={handlePageConfigSave}
                     style={styles.configInput}
                   />
                   <input
@@ -490,7 +455,6 @@ function TemplateEditor() {
                     title="Bottom"
                     value={pageConfig.paddingBottom}
                     onChange={(e) => handlePageConfigChange('paddingBottom', e.target.value)}
-                    onBlur={handlePageConfigSave}
                     style={styles.configInput}
                   />
                   <input
@@ -499,16 +463,15 @@ function TemplateEditor() {
                     title="Left"
                     value={pageConfig.paddingLeft}
                     onChange={(e) => handlePageConfigChange('paddingLeft', e.target.value)}
-                    onBlur={handlePageConfigSave}
                     style={styles.configInput}
                   />
                 </div>
               </div>
               <div className="config-group">
-                <label style={styles.configLabel}>Alinhamento</label>
+                <label style={styles.configLabel}>Alinhar</label>
                 <select
                   value={pageConfig.textAlign}
-                  onChange={(e) => handlePageConfigChangeAndSave('textAlign', e.target.value)}
+                  onChange={(e) => handlePageConfigChange('textAlign', e.target.value)}
                   style={styles.configInput}
                 >
                   <option value="left">Esquerda</option>
@@ -518,11 +481,11 @@ function TemplateEditor() {
                 </select>
               </div>
               <div className="config-group">
-                <label style={styles.configLabel}>Cor de Fundo</label>
+                <label style={styles.configLabel}>Fundo</label>
                 <input
                   type="color"
                   value={pageConfig.backgroundColor}
-                  onChange={(e) => handlePageConfigChangeAndSave('backgroundColor', e.target.value)}
+                  onChange={(e) => handlePageConfigChange('backgroundColor', e.target.value)}
                 />
               </div>
               <div className="config-group">
@@ -534,7 +497,6 @@ function TemplateEditor() {
         )}
       </div>
 
-      {/* Área de Drop dos Blocos - Esboço da Página */}
       <div
         ref={setNodeRef}
         className={`editor-content ${isOver ? 'drag-over' : ''}`}

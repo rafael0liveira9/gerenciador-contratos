@@ -18,7 +18,7 @@ const COLORS = [
   theme.colors.accent.purple
 ];
 const HTML_TAGS = [
-  { value: 'p', label: 'Paragrafo' },
+  { value: 'p', label: 'Parágrafo' },
   { value: 'h1', label: 'Titulo 1' },
   { value: 'h2', label: 'Titulo 2' },
   { value: 'h3', label: 'Titulo 3' },
@@ -232,7 +232,7 @@ function RichTextEditor({ value, onChange, htmlTag, onHtmlTagChange, styles, onS
             value={htmlTag || 'p'}
             onChange={(e) => onHtmlTagChange(e.target.value)}
             title="Tipo de elemento"
-            style={editorStyles.toolbarSelect}
+            style={{...editorStyles.toolbarSelect, maxWidth: 100}}
           >
             {HTML_TAGS.map(tag => (
               <option key={tag.value} value={tag.value}>{tag.label}</option>
@@ -247,7 +247,7 @@ function RichTextEditor({ value, onChange, htmlTag, onHtmlTagChange, styles, onS
             onChange={(e) => execCmd('fontSize', e.target.value)}
             defaultValue="3"
             title="Tamanho"
-            style={editorStyles.toolbarSelect}
+            style={{...editorStyles.toolbarSelect, maxWidth: 100}}
           >
             <option value="1">Muito pequeno</option>
             <option value="2">Pequeno</option>
@@ -494,7 +494,7 @@ function RichTextEditor({ value, onChange, htmlTag, onHtmlTagChange, styles, onS
         </div>
 
         <div className="style-group">
-          <label style={editorStyles.styleLabel}>Alinhamento do bloco</label>
+          <label style={editorStyles.styleLabel}>Alinhamento</label>
           <select
             value={currentStyles.textAlign || 'left'}
             onChange={(e) => handleStyleChange('textAlign', e.target.value)}

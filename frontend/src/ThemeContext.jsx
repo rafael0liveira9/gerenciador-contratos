@@ -15,9 +15,7 @@ export function useTheme() {
   return useContext(ThemeContext);
 }
 
-// Helper para criar estilos inline comuns
 export const createStyles = {
-  // Backgrounds
   bgPrimary: { background: `linear-gradient(135deg, ${theme.colors.primary.main} 0%, ${theme.colors.primary.dark} 100%)` },
   bgSecondary: { background: `linear-gradient(135deg, ${theme.colors.secondary.main} 0%, ${theme.colors.secondary.dark} 100%)` },
   bgSuccess: { background: `linear-gradient(135deg, ${theme.colors.success.main} 0%, ${theme.colors.success.dark} 100%)` },
@@ -27,7 +25,6 @@ export const createStyles = {
   bgSubtle: { backgroundColor: theme.colors.background.subtle },
   bgLight: { backgroundColor: theme.colors.background.light },
 
-  // Text colors
   textPrimary: { color: theme.colors.text.primary },
   textSecondary: { color: theme.colors.text.secondary },
   textMuted: { color: theme.colors.text.muted },

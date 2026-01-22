@@ -245,7 +245,7 @@ function GenerateContractModal({ template, blocks, onClose }) {
       overflow: 'hidden'
     },
     header: {
-      padding: '20px 24px',
+      padding: '10px 24px',
       borderBottom: `1px solid ${theme.colors.border.light}`,
       textAlign: 'center'
     },
@@ -266,7 +266,7 @@ function GenerateContractModal({ template, blocks, onClose }) {
     },
     variableRow: {
       marginBottom: '20px',
-      padding: '16px',
+      padding: '12px',
       backgroundColor: theme.colors.background.subtle,
       borderRadius: '8px'
     },
@@ -274,7 +274,7 @@ function GenerateContractModal({ template, blocks, onClose }) {
       display: 'flex',
       alignItems: 'center',
       gap: '12px',
-      marginBottom: '12px'
+      marginBottom: '0px'
     },
     variableName: {
       fontWeight: 600,
@@ -506,10 +506,10 @@ function GenerateContractModal({ template, blocks, onClose }) {
       <div style={styles.modal}>
         <div style={styles.header}>
           <h3 style={styles.title}>
-            {pdfUrl ? 'Documento Gerado' : 'Gerar Contrato'}
+            {pdfUrl ? 'Documento Gerado' : 'Gerar Documento'}
           </h3>
           {!pdfUrl && !loading && (
-            <p style={styles.subtitle}>Selecione as atribuições para cada variável</p>
+            <p style={styles.subtitle}>Selecione as atribuições para cada variável do documento.</p>
           )}
         </div>
 

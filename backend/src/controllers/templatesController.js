@@ -4,10 +4,39 @@ const prisma = new PrismaClient();
 const getByEmpresa = async (req, res) => {
   try {
     const { empresaId } = req.params;
+    const empresaIdInt = parseInt(empresaId);
+
+    // Get template IDs ordered by vigencia using raw SQL
+    const orderedTemplates = await prisma.$queryRaw`
+      SELECT id,
+        CASE
+          WHEN COALESCE(inicio_vigencia, NOW()) <= NOW()
+           AND COALESCE(fim_vigencia, NOW()) >= NOW()
+          THEN 1
+          ELSE 0
+        END as vigente
+      FROM templates
+      WHERE empresa_id = ${empresaIdInt}
+        AND data_exclusao IS NULL
+      ORDER BY
+        CASE
+          WHEN COALESCE(inicio_vigencia, NOW()) <= NOW()
+           AND COALESCE(fim_vigencia, NOW()) >= NOW()
+          THEN 0
+          ELSE 1
+        END,
+        data_criacao DESC
+    `;
+
+    if (orderedTemplates.length === 0) {
+      return res.json([]);
+    }
+
+    const templateIds = orderedTemplates.map(t => t.id);
+
     const templates = await prisma.template.findMany({
       where: {
-        empresaId: parseInt(empresaId),
-        dataExclusao: null
+        id: { in: templateIds }
       },
       include: {
         paginas: {
@@ -24,29 +53,16 @@ const getByEmpresa = async (req, res) => {
             }
           }
         }
-      },
-      orderBy: { dataCriacao: 'desc' }
+      }
     });
 
-    // Calcular vigência e ordenar
-    const now = new Date();
-    const templatesComVigencia = templates.map(template => {
-      const inicioVigencia = template.inicioVigencia ? new Date(template.inicioVigencia) : null;
-      const fimVigencia = template.fimVigencia ? new Date(template.fimVigencia) : null;
-
-      const vigente = inicioVigencia && inicioVigencia <= now && (!fimVigencia || fimVigencia >= now);
-
-      return { ...template, vigente };
+    const result = templateIds.map(id => {
+      const template = templates.find(t => t.id === id);
+      const ordered = orderedTemplates.find(t => t.id === id);
+      return { ...template, vigente: Boolean(ordered.vigente) };
     });
 
-    // Ordenar: vigentes primeiro, depois por data de criação
-    templatesComVigencia.sort((a, b) => {
-      if (a.vigente && !b.vigente) return -1;
-      if (!a.vigente && b.vigente) return 1;
-      return new Date(b.dataCriacao) - new Date(a.dataCriacao);
-    });
-
-    res.json(templatesComVigencia);
+    res.json(result);
   } catch (error) {
     console.error('Erro ao buscar templates:', error);
     res.status(500).json({ error: 'Erro ao buscar templates' });

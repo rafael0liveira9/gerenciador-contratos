@@ -1,7 +1,42 @@
+import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import theme from '../theme';
 
+const defaultPageConfig = {
+  marginTop: 48,
+  marginRight: 48,
+  marginBottom: 48,
+  marginLeft: 48,
+  paddingTop: 0,
+  paddingRight: 0,
+  paddingBottom: 0,
+  paddingLeft: 0,
+  textAlign: 'left',
+  backgroundColor: '#ffffff',
+  backgroundImage: ''
+};
+
 function ContractPreview({ template, blocks, onClose }) {
+  const paginas = template?.paginas || [];
+  const [currentPageIndex, setCurrentPageIndex] = useState(0);
+
+  // Parse page config from conteudo JSON
+  const getPageConfig = (pagina) => {
+    if (!pagina?.conteudo) return defaultPageConfig;
+    try {
+      const config = JSON.parse(pagina.conteudo);
+      return { ...defaultPageConfig, ...config };
+    } catch {
+      return defaultPageConfig;
+    }
+  };
+
+  // Get blocks for a specific page
+  const getPageBlocks = (pagina) => {
+    if (!pagina?.blocos) return [];
+    return [...pagina.blocos].sort((a, b) => a.ordem - b.ordem);
+  };
+
   const renderBlockContent = (block) => {
     const blockStyles = block.styles
       ? (typeof block.styles === 'string' ? JSON.parse(block.styles) : block.styles)
@@ -49,6 +84,84 @@ function ContractPreview({ template, blocks, onClose }) {
     );
   };
 
+  const renderPage = (pagina, index) => {
+    const pageConfig = getPageConfig(pagina);
+    const pageBlocks = getPageBlocks(pagina);
+
+    const pageStyle = {
+      backgroundColor: pageConfig.backgroundColor || '#ffffff',
+      backgroundImage: pageConfig.backgroundImage ? `url(${pageConfig.backgroundImage})` : 'none',
+      backgroundSize: 'cover',
+      backgroundPosition: 'center',
+      marginTop: pageConfig.marginTop ? `${pageConfig.marginTop}px` : '48px',
+      marginRight: pageConfig.marginRight ? `${pageConfig.marginRight}px` : '48px',
+      marginBottom: pageConfig.marginBottom ? `${pageConfig.marginBottom}px` : '48px',
+      marginLeft: pageConfig.marginLeft ? `${pageConfig.marginLeft}px` : '48px',
+      paddingTop: pageConfig.paddingTop ? `${pageConfig.paddingTop}px` : '0',
+      paddingRight: pageConfig.paddingRight ? `${pageConfig.paddingRight}px` : '0',
+      paddingBottom: pageConfig.paddingBottom ? `${pageConfig.paddingBottom}px` : '0',
+      paddingLeft: pageConfig.paddingLeft ? `${pageConfig.paddingLeft}px` : '0',
+      textAlign: pageConfig.textAlign || 'left',
+      minHeight: '900px',
+      color: '#000'
+    };
+
+    return (
+      <div
+        key={pagina.id}
+        style={{
+          backgroundColor: '#fff',
+          maxWidth: '800px',
+          width: '100%',
+          boxShadow: '0 4px 24px rgba(0, 0, 0, 0.3)',
+          marginBottom: '32px',
+          position: 'relative'
+        }}
+      >
+        {/* Page number badge */}
+        <div style={{
+          position: 'absolute',
+          top: '-12px',
+          right: '16px',
+          backgroundColor: theme.colors.primary.main,
+          color: '#fff',
+          padding: '4px 12px',
+          borderRadius: '12px',
+          fontSize: '0.8rem',
+          fontWeight: 600
+        }}>
+          Página {index + 1} de {paginas.length}
+        </div>
+
+        {/* Page content */}
+        <div style={pageStyle}>
+          {pageBlocks.length > 0 ? (
+            pageBlocks.map(block => renderBlockContent(block))
+          ) : (
+            <div style={{ color: '#999', textAlign: 'center', padding: '48px' }}>
+              Página vazia
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  // Fallback: if no pages, show blocks directly
+  const renderFallback = () => (
+    <div style={{
+      backgroundColor: '#fff',
+      padding: '48px',
+      maxWidth: '800px',
+      width: '100%',
+      minHeight: '900px',
+      boxShadow: '0 4px 24px rgba(0, 0, 0, 0.3)',
+      color: '#000'
+    }}>
+      {blocks.map(block => renderBlockContent(block))}
+    </div>
+  );
+
   const modalContent = (
     <div style={{
       position: 'fixed',
@@ -60,51 +173,61 @@ function ContractPreview({ template, blocks, onClose }) {
       zIndex: 9999,
       overflow: 'hidden'
     }}>
-      {/* Close button */}
-      <button
-        onClick={onClose}
-        style={{
-          position: 'absolute',
-          top: '20px',
-          right: '20px',
-          width: '40px',
-          height: '40px',
-          border: 'none',
-          borderRadius: '50%',
-          cursor: 'pointer',
-          fontSize: '20px',
-          fontWeight: 'bold',
-          backgroundColor: 'rgba(255, 255, 255, 0.9)',
-          color: '#333',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)',
-          zIndex: 10000
-        }}
-      >
-        ×
-      </button>
+      {/* Header with title and close button */}
+      <div style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        padding: '16px 24px',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        zIndex: 10000
+      }}>
+        <h3 style={{ margin: 0, color: '#fff', fontSize: '1.1rem' }}>
+          {template?.nome || 'Visualização do Contrato'}
+        </h3>
+        <button
+          onClick={onClose}
+          style={{
+            width: '36px',
+            height: '36px',
+            border: 'none',
+            borderRadius: '50%',
+            cursor: 'pointer',
+            fontSize: '24px',
+            fontWeight: 'bold',
+            backgroundColor: 'rgba(255, 255, 255, 0.9)',
+            color: '#333',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            paddingBottom: 4
+          }}
+        >
+          ×
+        </button>
+      </div>
 
       {/* Document area */}
       <div style={{
         height: '100%',
         overflow: 'auto',
-        padding: '32px',
+        paddingTop: '80px',
+        paddingBottom: '32px',
+        paddingLeft: '32px',
+        paddingRight: '32px',
         display: 'flex',
-        justifyContent: 'center'
+        flexDirection: 'column',
+        alignItems: 'center'
       }}>
-        <div style={{
-          backgroundColor: '#fff',
-          padding: '48px',
-          maxWidth: '800px',
-          width: '100%',
-          minHeight: '1000px',
-          boxShadow: '0 4px 24px rgba(0, 0, 0, 0.3)',
-          color: '#000'
-        }}>
-          {blocks.map(block => renderBlockContent(block))}
-        </div>
+        {paginas.length > 0 ? (
+          paginas.map((pagina, index) => renderPage(pagina, index))
+        ) : (
+          renderFallback()
+        )}
       </div>
     </div>
   );

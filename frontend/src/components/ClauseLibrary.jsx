@@ -40,7 +40,6 @@ const typeLabels = {
   RODAPE: 'Rodapé'
 };
 
-// Componente de item draggable unificado
 function DraggableItem({ item }) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: `${item.tipo.toLowerCase()}-${item.id}`,
@@ -71,22 +70,42 @@ function DraggableItem({ item }) {
     padding: '2px 8px',
     borderRadius: '10px',
     textTransform: 'uppercase',
-    letterSpacing: '0.3px'
+    letterSpacing: '0.3px',
+  };
+    const chipIdStyle = {
+    backgroundColor: theme.colors.success.main,
+    color: '#fff',
+    fontSize: '0.65rem',
+    fontWeight: 600,
+    padding: '2px 8px',
+    borderRadius: '10px',
+    textTransform: 'uppercase',
+    letterSpacing: '0.3px',
   };
 
   return (
     <div
       ref={setNodeRef}
-      style={style}
+      style={{...style, position: 'relative'}}
       {...listeners}
       {...attributes}
       className="clause-item"
     >
+      <div style={{    
+        position: 'absolute',
+        top: '-4px',
+        right: '5px',
+        display: 'flex',
+        flexDirection: 'row',
+        gap: '5px'
+        }}>
+          <span style={chipIdStyle}>#{item.id}</span>
+          <span style={chipStyle}>{typeLabels[item.tipo]}</span>
+      </div>
       <div className="clause-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 }}>
         <div className="clause-title" style={{ color: theme.colors.text.primary, flex: 1 }}>
           {item.nome}
         </div>
-        <span style={chipStyle}>{typeLabels[item.tipo]}</span>
       </div>
       <div className="clause-preview" style={{ color: theme.colors.text.muted }}>
         {item.conteudo?.replace(/<[^>]*>/g, '').substring(0, 80)}...
@@ -95,11 +114,16 @@ function DraggableItem({ item }) {
   );
 }
 
-// Botões de adicionar bloco
 const btnAddStyle = {
   background: `linear-gradient(135deg, ${theme.colors.primary.main} 0%, ${theme.colors.primary.dark} 100%)`,
   color: theme.colors.primary.contrast,
   boxShadow: `0 4px 12px ${theme.colors.primary.main}40`,
+  fontSize: '0.95rem',
+  fontWeight: 600
+};
+const btnAddDashedBtn = {
+  color: theme.colors.text.muted,
+  boxShadow: `0 4px 12px ${theme.colors.text.muted}40`,
   fontSize: '0.95rem',
   fontWeight: 600
 };
@@ -114,7 +138,7 @@ function DraggableNewBlock({ type, label }) {
   });
 
   const style = {
-    ...btnAddStyle,
+    ...btnAddDashedBtn,
     ...(transform ? {
       transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
       opacity: isDragging ? 0.5 : 1
@@ -254,7 +278,6 @@ function ClauseLibrary() {
     setShowNewModal(false);
   };
 
-  // Criar/Editar variavel
   const handleSaveVariavel = async (e) => {
     e.preventDefault();
     if (!newVariavelTag.trim()) return;
@@ -312,9 +335,9 @@ function ClauseLibrary() {
       borderBottom: `1px solid ${theme.colors.border.light}`
     },
     title: {
-      color: theme.colors.text.primary,
-      fontSize: '1rem',
-      fontWeight: 600,
+      color: theme.colors.secondary.main,
+      fontSize: 18,
+      fontWeight: 700,
       margin: 0
     },
     tabs: {
@@ -324,11 +347,11 @@ function ClauseLibrary() {
     },
     tab: {
       flex: 1,
-      padding: '10px 16px',
+      padding: '6px 16px',
       border: 'none',
       borderRadius: '8px',
       cursor: 'pointer',
-      fontSize: '0.875rem',
+      fontSize: '12px',
       fontWeight: 500,
       transition: 'all 0.2s'
     },
@@ -346,7 +369,7 @@ function ClauseLibrary() {
       justifyContent: 'space-between',
       flexWrap: 'wrap',
       gap: '8px',
-      padding: '12px 16px',
+      padding: '15px 10px 8px 10px',
       backgroundColor: theme.colors.background.subtle,
       borderRadius: '8px',
       marginBottom: '8px',
@@ -370,11 +393,11 @@ function ClauseLibrary() {
       flexShrink: 0
     },
     variavelBtn: {
-      padding: '6px 10px',
+      padding: '3px 5px',
       border: 'none',
       borderRadius: '6px',
       cursor: 'pointer',
-      fontSize: '0.75rem',
+      fontSize: '11px',
       fontWeight: 500
     },
     variavelBtnEdit: {
@@ -464,7 +487,7 @@ function ClauseLibrary() {
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      padding: '14px 16px',
+      padding: '10px 16px',
       borderRadius: '10px',
       cursor: 'pointer',
       marginBottom: '12px',
@@ -513,7 +536,7 @@ function ClauseLibrary() {
               onClick={() => setShowNewModal(true)}
               style={styles.btnAddClause}
             >
-              <span style={{ fontSize: 18, marginRight: 5 }}>+</span>
+              <span style={{ fontSize: 15, marginRight: 5 }}>+</span>
               Novo Item
             </button>
 
@@ -535,7 +558,6 @@ function ClauseLibrary() {
           </div>
 
           <div style={styles.addBlockSection}>
-            <h4 style={styles.addBlockTitle}>Adicionar Bloco</h4>
             <DraggableNewBlock type="TITULO" label="Novo Título" />
             <DraggableNewBlock type="OBSERVACAO" label="Nova Observação" />
           </div>
@@ -571,9 +593,9 @@ function ClauseLibrary() {
           )}
 
           {!variaveisLoading && variaveis.map(variavel => (
-            <div key={variavel.id} style={styles.variavelItem}>
+            <div key={variavel.id} style={{...styles.variavelItem, position:'relative'}}>
               <span style={styles.variavelTag}>{`{{${variavel.tag}}}`}</span>
-              <div style={styles.variavelActions}>
+              <div style={{...styles.variavelActions, position: 'absolute', top:'-3px', right: '-3px'}}>
                 <button
                   onClick={() => handleEditVariavel(variavel)}
                   style={{ ...styles.variavelBtn, ...styles.variavelBtnEdit }}

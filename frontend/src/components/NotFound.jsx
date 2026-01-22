@@ -9,7 +9,7 @@ export default function NotFound() {
     },
     container: {
       backgroundColor: theme.colors.background.paper,
-      boxShadow: '0 10px 38px rgba(0, 0, 0, 0.4)'
+      // boxShadow: '0 10px 38px rgba(0, 0, 0, 0.4)'
     },
     code: {
       color: theme.colors.primary.main

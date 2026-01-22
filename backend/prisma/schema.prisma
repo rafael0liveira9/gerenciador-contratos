@@ -19,6 +19,7 @@ model Empresa {
   dataExclusao DateTime?     @map("data_exclusao")
   cabecalhos   Cabecalho[]
   clausulas    Clausula[]
+  contratos    Contrato[]
   documentos   Documento[]
   responsaveis Responsavel[]
   rodapes      Rodape[]
@@ -45,19 +46,20 @@ model Responsavel {
 }
 
 model Template {
-  id             Int        @id @default(autoincrement())
-  empresaId      Int        @map("empresa_id")
-  versao         Int        @default(1)
-  nome           String     @db.VarChar(255)
-  descricao      String?    @db.Text
-  dataCriacao    DateTime   @default(now()) @map("data_criacao")
-  dataEdicao     DateTime?  @updatedAt @map("data_edicao")
-  dataExclusao   DateTime?  @map("data_exclusao")
-  inicioVigencia DateTime   @default(now()) @map("inicio_vigencia")
-  fimVigencia    DateTime?  @map("fim_vigencia")
+  id             Int         @id @default(autoincrement())
+  empresaId      Int         @map("empresa_id")
+  versao         Int         @default(1)
+  nome           String      @db.VarChar(255)
+  descricao      String?     @db.Text
+  dataCriacao    DateTime    @default(now()) @map("data_criacao")
+  dataEdicao     DateTime?   @updatedAt @map("data_edicao")
+  dataExclusao   DateTime?   @map("data_exclusao")
+  inicioVigencia DateTime    @default(now()) @map("inicio_vigencia")
+  fimVigencia    DateTime?   @map("fim_vigencia")
+  contratos      Contrato[]
   documentos     Documento[]
   paginas        Pagina[]
-  empresa        Empresa    @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  empresa        Empresa     @relation(fields: [empresaId], references: [id], onDelete: Cascade)
 
   @@index([empresaId], map: "templates_empresa_id_fkey")
   @@map("templates")
@@ -89,10 +91,10 @@ model Bloco {
   numeracao   String?    @db.VarChar(50)
   htmlTag     String     @default("p") @map("html_tag") @db.VarChar(20)
   styles      String?    @db.Text
-  conteudo    String?    @db.Text
   tipo        TipoBloco
   dataCriacao DateTime   @default(now()) @map("data_criacao")
   dataEdicao  DateTime?  @updatedAt @map("data_edicao")
+  conteudo    String?    @db.Text
   cabecalho   Cabecalho? @relation(fields: [cabecalhoId], references: [id])
   clausula    Clausula?  @relation(fields: [clausulaId], references: [id])
   pagina      Pagina     @relation(fields: [paginaId], references: [id], onDelete: Cascade)
@@ -192,6 +194,23 @@ model Variavel {
 
   @@index([empresaId], map: "variaveis_empresa_id_fkey")
   @@map("variaveis")
+}
+
+model Contrato {
+  id            Int       @id @default(autoincrement())
+  empresaId     Int       @map("empresa_id")
+  templateId    Int       @map("template_id")
+  conteudo      String?   @db.LongText
+  dataEnviado   DateTime  @default(now()) @map("data_enviado")
+  dataAssinado  DateTime? @map("data_assinado")
+  dataConcluido DateTime? @map("data_concluido")
+  dataCancelado DateTime? @map("data_cancelado")
+  empresa       Empresa   @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  template      Template  @relation(fields: [templateId], references: [id])
+
+  @@index([empresaId], map: "contratos_empresa_id_fkey")
+  @@index([templateId], map: "contratos_template_id_fkey")
+  @@map("contratos")
 }
 
 enum TipoBloco {

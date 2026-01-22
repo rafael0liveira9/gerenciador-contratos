@@ -60,11 +60,11 @@ function TemplateList() {
       boxShadow: '2px 0 16px rgba(0, 0, 0, 0.15)'
     },
     title: {
-      color: theme.colors.text.primary,
+      color: theme.colors.secondary.main,
       borderBottomColor: theme.colors.border.light,
-      fontSize: 18,
+      fontSize: 17,
       fontWeight: 700,
-      padding: '40px 20px 10px 20px'
+      padding: '20px 0px 0px 20px'
     },
     btnAdd: {
       background: `linear-gradient(135deg, ${theme.colors.primary.main} 0%, ${theme.colors.primary.dark} 100%)`,
@@ -149,7 +149,7 @@ function TemplateList() {
         onClick={() => setShowNewModal(true)}
         style={styles.btnAdd}
       >
-        <span style={{ fontSize: 18, marginRight: 5 }}>+</span>Novo Template
+        <span style={{ fontSize: 15, marginRight: 5 }}>+</span>Novo Template
       </button>
 
       <div className="templates">
