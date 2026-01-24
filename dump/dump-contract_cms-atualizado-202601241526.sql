@@ -79,7 +79,7 @@ CREATE TABLE `cabecalhos` (
   PRIMARY KEY (`id`),
   KEY `cabecalhos_empresa_id_fkey` (`empresa_id`),
   KEY `cabecalhos_parent_id_fkey` (`parent_id`),
-  CONSTRAINT `cabecalhos_empresa_id_fkey` FOREIGN KEY (`empresa_id`) REFERENCES `empresas` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `cabecalhos_empresa_id_fkey` FOREIGN KEY (`empresa_id`) REFERENCES `empresas` (`id_empresa`) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT `cabecalhos_parent_id_fkey` FOREIGN KEY (`parent_id`) REFERENCES `cabecalhos` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -114,7 +114,7 @@ CREATE TABLE `clausulas` (
   PRIMARY KEY (`id`),
   KEY `clausulas_empresa_id_fkey` (`empresa_id`),
   KEY `clausulas_parent_id_fkey` (`parent_id`),
-  CONSTRAINT `clausulas_empresa_id_fkey` FOREIGN KEY (`empresa_id`) REFERENCES `empresas` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `clausulas_empresa_id_fkey` FOREIGN KEY (`empresa_id`) REFERENCES `empresas` (`id_empresa`) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT `clausulas_parent_id_fkey` FOREIGN KEY (`parent_id`) REFERENCES `clausulas` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -148,9 +148,9 @@ CREATE TABLE `documentos` (
   PRIMARY KEY (`id`),
   KEY `documentos_empresa_id_fkey` (`empresa_id`),
   KEY `documentos_template_id_fkey` (`template_id`),
-  CONSTRAINT `documentos_empresa_id_fkey` FOREIGN KEY (`empresa_id`) REFERENCES `empresas` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `documentos_empresa_id_fkey` FOREIGN KEY (`empresa_id`) REFERENCES `empresas` (`id_empresa`) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT `documentos_template_id_fkey` FOREIGN KEY (`template_id`) REFERENCES `templates` (`id`) ON UPDATE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -159,7 +159,7 @@ CREATE TABLE `documentos` (
 
 LOCK TABLES `documentos` WRITE;
 /*!40000 ALTER TABLE `documentos` DISABLE KEYS */;
-INSERT INTO `documentos` VALUES (1,1,1,'/public/documentos/1/documento_1768589063390.pdf','2026-01-16 18:44:23.394',NULL,NULL,NULL),(2,1,1,'/public/documentos/1/documento_1768589769075.pdf','2026-01-16 18:56:09.077',NULL,NULL,NULL);
+INSERT INTO `documentos` VALUES (1,1,1,'/public/documentos/1/documento_1768589063390.pdf','2026-01-16 18:44:23.394',NULL,NULL,NULL),(2,1,1,'/public/documentos/1/documento_1768589769075.pdf','2026-01-16 18:56:09.077',NULL,NULL,NULL),(3,1,1,'/public/documentos/1/contrato_1769278376772.pdf','2026-01-24 18:12:56.774',NULL,NULL,NULL);
 /*!40000 ALTER TABLE `documentos` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -171,16 +171,18 @@ DROP TABLE IF EXISTS `empresas`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `empresas` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `id_empresa` int(11) NOT NULL AUTO_INCREMENT,
   `documento` varchar(20) NOT NULL,
   `nome` varchar(255) NOT NULL,
   `slug` varchar(100) NOT NULL,
-  `secret` varchar(255) NOT NULL,
+  `secret_key` varchar(255) NOT NULL,
   `ativo` tinyint(1) NOT NULL DEFAULT 1,
   `data_criacao` datetime(3) NOT NULL DEFAULT current_timestamp(3),
   `data_edicao` datetime(3) DEFAULT NULL,
   `data_exclusao` datetime(3) DEFAULT NULL,
-  PRIMARY KEY (`id`),
+  `acess_key` varchar(100) NOT NULL,
+  `senha` varchar(100) NOT NULL,
+  PRIMARY KEY (`id_empresa`),
   UNIQUE KEY `empresas_slug_key` (`slug`)
 ) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -191,8 +193,35 @@ CREATE TABLE `empresas` (
 
 LOCK TABLES `empresas` WRITE;
 /*!40000 ALTER TABLE `empresas` DISABLE KEYS */;
-INSERT INTO `empresas` VALUES (1,'111111111111','Speed Sale','speed-sale','A9fK3xQm7P2ZLwE8sR4H',1,'2026-01-16 10:41:16.132',NULL,NULL);
+INSERT INTO `empresas` VALUES (1,'11111111111111','Speed Sale','speed-sale','xK9mP2nQ4wR7tY1uL8vB3cD6fG0hJ5sA',1,'2026-01-16 10:41:16.132',NULL,NULL,'EMP7K2X9M4QWRT8N','$2b$10$UCnNo.11HRUNLDq13.2Ewe0rraRnZOrdAWhJblQeKosJNhoXRWQGm');
 /*!40000 ALTER TABLE `empresas` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `logs`
+--
+
+DROP TABLE IF EXISTS `logs`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `logs` (
+  `id_log` int(11) NOT NULL,
+  `id_empresa` int(11) NOT NULL,
+  `data_criacao` datetime NOT NULL,
+  `content` varchar(255) NOT NULL,
+  PRIMARY KEY (`id_log`),
+  KEY `logs_empresas_FK` (`id_empresa`),
+  CONSTRAINT `logs_empresas_FK` FOREIGN KEY (`id_empresa`) REFERENCES `empresas` (`id_empresa`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `logs`
+--
+
+LOCK TABLES `logs` WRITE;
+/*!40000 ALTER TABLE `logs` DISABLE KEYS */;
+/*!40000 ALTER TABLE `logs` ENABLE KEYS */;
 UNLOCK TABLES;
 
 --
@@ -245,7 +274,7 @@ CREATE TABLE `responsaveis` (
   `data_exclusao` datetime(3) DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `responsaveis_empresa_id_fkey` (`empresa_id`),
-  CONSTRAINT `responsaveis_empresa_id_fkey` FOREIGN KEY (`empresa_id`) REFERENCES `empresas` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+  CONSTRAINT `responsaveis_empresa_id_fkey` FOREIGN KEY (`empresa_id`) REFERENCES `empresas` (`id_empresa`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -279,7 +308,7 @@ CREATE TABLE `rodapes` (
   PRIMARY KEY (`id`),
   KEY `rodapes_empresa_id_fkey` (`empresa_id`),
   KEY `rodapes_parent_id_fkey` (`parent_id`),
-  CONSTRAINT `rodapes_empresa_id_fkey` FOREIGN KEY (`empresa_id`) REFERENCES `empresas` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `rodapes_empresa_id_fkey` FOREIGN KEY (`empresa_id`) REFERENCES `empresas` (`id_empresa`) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT `rodapes_parent_id_fkey` FOREIGN KEY (`parent_id`) REFERENCES `rodapes` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -313,7 +342,7 @@ CREATE TABLE `templates` (
   `fim_vigencia` datetime(3) DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `templates_empresa_id_fkey` (`empresa_id`),
-  CONSTRAINT `templates_empresa_id_fkey` FOREIGN KEY (`empresa_id`) REFERENCES `empresas` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+  CONSTRAINT `templates_empresa_id_fkey` FOREIGN KEY (`empresa_id`) REFERENCES `empresas` (`id_empresa`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -342,7 +371,7 @@ CREATE TABLE `variaveis` (
   `data_edicao` datetime(3) DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `variaveis_empresa_id_fkey` (`empresa_id`),
-  CONSTRAINT `variaveis_empresa_id_fkey` FOREIGN KEY (`empresa_id`) REFERENCES `empresas` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+  CONSTRAINT `variaveis_empresa_id_fkey` FOREIGN KEY (`empresa_id`) REFERENCES `empresas` (`id_empresa`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB AUTO_INCREMENT=12 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -369,4 +398,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-01-18 20:54:52
+-- Dump completed on 2026-01-24 15:26:50

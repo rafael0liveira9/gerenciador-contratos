@@ -1,6 +1,0 @@
-{
-    id_usuario: 1,
-    id_empresa: 2,
-    access_key: "ASDBASBDOBASD
-    data_requisicao: "Datetime"
-}

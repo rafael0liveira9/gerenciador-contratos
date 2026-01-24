@@ -1,4 +1,5 @@
 import { configureStore } from '@reduxjs/toolkit';
+import authReducer from './authSlice';
 import empresaReducer from './empresaSlice';
 import clausulasReducer from './clausulasSlice';
 import cabecalhosReducer from './cabecalhosSlice';
@@ -12,6 +13,7 @@ import bibliotecaReducer from './bibliotecaSlice';
 
 export const store = configureStore({
   reducer: {
+    auth: authReducer,
     empresa: empresaReducer,
     clausulas: clausulasReducer,
     cabecalhos: cabecalhosReducer,

@@ -38,9 +38,9 @@ const getAll = async (req, res) => {
 
 const create = async (req, res) => {
   try {
-    const { documento, nome, slug, secret } = req.body;
+    const { documento, nome, slug, secretKey, acessKey, senha } = req.body;
     const empresa = await prisma.empresa.create({
-      data: { documento, nome, slug, secret }
+      data: { documento, nome, slug, secretKey, acessKey, senha }
     });
     res.status(201).json(empresa);
   } catch (error) {
@@ -52,10 +52,10 @@ const create = async (req, res) => {
 const update = async (req, res) => {
   try {
     const { id } = req.params;
-    const { documento, nome, slug, secret, ativo } = req.body;
+    const { documento, nome, slug, secretKey, acessKey, senha, ativo } = req.body;
     const empresa = await prisma.empresa.update({
       where: { id: parseInt(id) },
-      data: { documento, nome, slug, secret, ativo }
+      data: { documento, nome, slug, secretKey, acessKey, senha, ativo }
     });
     res.json(empresa);
   } catch (error) {

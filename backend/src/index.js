@@ -1,6 +1,8 @@
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+const authRoutes = require('./routes/auth');
 const empresasRoutes = require('./routes/empresas');
 const clausulasRoutes = require('./routes/clausulas');
 const cabecalhosRoutes = require('./routes/cabecalhos');
@@ -13,6 +15,7 @@ const variaveisRoutes = require('./routes/variaveis');
 const responsaveisRoutes = require('./routes/responsaveis');
 const bibliotecaRoutes = require('./routes/biblioteca');
 const documentosRoutes = require('./routes/documentos');
+const integrationRoutes = require('./routes/integration');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -26,6 +29,7 @@ app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use('/public', express.static(path.join(__dirname, '../public')));
 
 // Routes
+app.use('/api/auth', authRoutes);
 app.use('/api/empresas', empresasRoutes);
 app.use('/api/clausulas', clausulasRoutes);
 app.use('/api/cabecalhos', cabecalhosRoutes);
@@ -38,6 +42,7 @@ app.use('/api/variaveis', variaveisRoutes);
 app.use('/api/responsaveis', responsaveisRoutes);
 app.use('/api/biblioteca', bibliotecaRoutes);
 app.use('/api/documentos', documentosRoutes);
+app.use('/api/v1', integrationRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

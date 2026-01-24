@@ -1,6 +1,6 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 
-const API_URL = 'http://localhost:3001/api';
+const API_URL = 'http://localhost:4002/api';
 
 export const fetchTemplates = createAsyncThunk(
   'templates/fetchByEmpresa',

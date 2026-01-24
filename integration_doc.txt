@@ -1,0 +1,450 @@
+================================================================================
+                    DOCUMENTACAO DE INTEGRACAO - API DE CONTRATOS
+================================================================================
+
+SUMARIO:
+1. Introducao
+2. Autenticacao (JWT)
+3. Como Gerar o Token JWT
+4. Rotas Disponiveis
+5. Exemplos Praticos
+6. Logs (Opcional)
+7. Erros Comuns
+
+================================================================================
+1. INTRODUCAO
+================================================================================
+
+Esta API permite integrar seu sistema (CRM, ERP, etc.) com nossa plataforma de
+geracao de contratos. Voce pode:
+
+- Listar seus templates de contrato
+- Ver as variaveis de cada template
+- Gerar PDFs de contratos preenchendo as variaveis com HTML
+
+Base URL: https://seu-dominio.com/api/v1
+
+================================================================================
+2. AUTENTICACAO (JWT)
+================================================================================
+
+Todas as requisicoes devem incluir um token JWT no header Authorization.
+
+Header obrigatorio:
+    Authorization: Bearer {seu_token_jwt}
+
+Voce vai precisar de duas chaves (fornecidas pelo administrador):
+    - ACCESS_KEY: Identifica sua empresa
+    - SECRET_KEY: Usada para assinar o token (NUNCA compartilhe!)
+
+================================================================================
+3. COMO GERAR O TOKEN JWT
+================================================================================
+
+O token JWT deve ser gerado no SEU sistema (backend) antes de cada requisicao.
+O token deve conter no payload:
+
+{
+    "access_key": "SUA_ACCESS_KEY",
+    "timestamp": 1234567890,
+    "exp": 1234567890
+}
+
+Campos:
+    - access_key: Sua chave de acesso (obrigatorio)
+    - timestamp: Data/hora atual em Unix timestamp (opcional, recomendado)
+    - exp: Data/hora de expiracao em Unix timestamp (obrigatorio)
+
+IMPORTANTE: O token deve ser assinado com sua SECRET_KEY usando algoritmo HS256.
+
+---------- EXEMPLO EM JAVASCRIPT (Node.js) ----------
+
+const jwt = require('jsonwebtoken');
+
+const ACCESS_KEY = 'sua_access_key_aqui';
+const SECRET_KEY = 'sua_secret_key_aqui';
+
+function gerarToken() {
+    const payload = {
+        access_key: ACCESS_KEY,
+        timestamp: Math.floor(Date.now() / 1000),
+        exp: Math.floor(Date.now() / 1000) + (60 * 60) // Expira em 1 hora
+    };
+
+    return jwt.sign(payload, SECRET_KEY, { algorithm: 'HS256' });
+}
+
+const token = gerarToken();
+console.log(token);
+
+---------- EXEMPLO EM PHP ----------
+
+<?php
+// Usando a biblioteca firebase/php-jwt
+use Firebase\JWT\JWT;
+
+$ACCESS_KEY = 'sua_access_key_aqui';
+$SECRET_KEY = 'sua_secret_key_aqui';
+
+function gerarToken() {
+    global $ACCESS_KEY, $SECRET_KEY;
+
+    $payload = [
+        'access_key' => $ACCESS_KEY,
+        'timestamp' => time(),
+        'exp' => time() + 3600 // Expira em 1 hora
+    ];
+
+    return JWT::encode($payload, $SECRET_KEY, 'HS256');
+}
+
+$token = gerarToken();
+echo $token;
+?>
+
+---------- EXEMPLO EM PYTHON ----------
+
+import jwt
+import time
+
+ACCESS_KEY = 'sua_access_key_aqui'
+SECRET_KEY = 'sua_secret_key_aqui'
+
+def gerar_token():
+    payload = {
+        'access_key': ACCESS_KEY,
+        'timestamp': int(time.time()),
+        'exp': int(time.time()) + 3600  # Expira em 1 hora
+    }
+
+    return jwt.encode(payload, SECRET_KEY, algorithm='HS256')
+
+token = gerar_token()
+print(token)
+
+================================================================================
+4. ROTAS DISPONIVEIS
+================================================================================
+
+------------------------------------------------------------------------------
+4.1 LISTAR TEMPLATES
+------------------------------------------------------------------------------
+
+GET /api/v1/templates
+
+Retorna todos os templates da sua empresa.
+
+Headers:
+    Authorization: Bearer {token}
+    Content-Type: application/json
+
+Resposta de sucesso (200):
+{
+    "success": true,
+    "data": [
+        {
+            "id": 1,
+            "nome": "Contrato de Prestacao de Servicos",
+            "descricao": "Contrato padrao para servicos",
+            "versao": 1,
+            "dataCriacao": "2024-01-15T10:30:00.000Z",
+            "dataEdicao": "2024-01-20T14:00:00.000Z"
+        },
+        {
+            "id": 2,
+            "nome": "Contrato de Locacao",
+            "descricao": "Contrato de aluguel de imovel",
+            "versao": 2,
+            "dataCriacao": "2024-02-01T09:00:00.000Z",
+            "dataEdicao": null
+        }
+    ]
+}
+
+------------------------------------------------------------------------------
+4.2 BUSCAR TEMPLATE POR ID (COM VARIAVEIS)
+------------------------------------------------------------------------------
+
+GET /api/v1/templates/:id
+
+Retorna um template especifico com a lista de variaveis que ele usa.
+
+Headers:
+    Authorization: Bearer {token}
+    Content-Type: application/json
+
+Parametros:
+    :id - ID do template (numero)
+
+Resposta de sucesso (200):
+{
+    "success": true,
+    "data": {
+        "id": 1,
+        "nome": "Contrato de Prestacao de Servicos",
+        "descricao": "Contrato padrao para servicos",
+        "versao": 1,
+        "variaveis": [
+            { "tag": "nome_cliente" },
+            { "tag": "cpf_cliente" },
+            { "tag": "endereco" },
+            { "tag": "valor_contrato" },
+            { "tag": "data_inicio" }
+        ]
+    }
+}
+
+------------------------------------------------------------------------------
+4.3 GERAR CONTRATO (PDF)
+------------------------------------------------------------------------------
+
+POST /api/v1/contracts/generate
+
+Gera um PDF do contrato com as variaveis preenchidas.
+
+Headers:
+    Authorization: Bearer {token}
+    Content-Type: application/json
+
+Body (JSON):
+{
+    "templateId": 1,
+    "variaveis": {
+        "nome_cliente": "<strong>Joao da Silva</strong>",
+        "cpf_cliente": "123.456.789-00",
+        "endereco": "<p>Rua das Flores, 123<br>Centro - Sao Paulo/SP</p>",
+        "valor_contrato": "<span style=\"color: green;\">R$ 5.000,00</span>",
+        "data_inicio": "01/02/2024"
+    },
+    "log": {
+        "name": "Maria Operadora",
+        "document": "987.654.321-00",
+        "cargo": "Vendedor",
+        "comentario": "Contrato gerado para novo cliente"
+    }
+}
+
+Campos:
+    - templateId (obrigatorio): ID do template
+    - variaveis (obrigatorio): Objeto com as variaveis e seus valores HTML
+    - log (opcional): Dados para registro de auditoria
+
+IMPORTANTE: Os valores das variaveis aceitam HTML!
+Voce pode usar tags como <strong>, <em>, <p>, <br>, <table>, <img>, etc.
+
+Resposta de sucesso (200):
+{
+    "success": true,
+    "data": {
+        "id": 123,
+        "pdfUrl": "https://seu-dominio.com/public/documentos/1/contrato_1705312800000.pdf",
+        "pdfPath": "/public/documentos/1/contrato_1705312800000.pdf"
+    }
+}
+
+================================================================================
+5. EXEMPLOS PRATICOS
+================================================================================
+
+---------- EXEMPLO COMPLETO EM JAVASCRIPT (Node.js com Axios) ----------
+
+const axios = require('axios');
+const jwt = require('jsonwebtoken');
+
+const BASE_URL = 'https://seu-dominio.com/api/v1';
+const ACCESS_KEY = 'sua_access_key';
+const SECRET_KEY = 'sua_secret_key';
+
+// Gerar token
+function gerarToken() {
+    return jwt.sign(
+        {
+            access_key: ACCESS_KEY,
+            timestamp: Math.floor(Date.now() / 1000),
+            exp: Math.floor(Date.now() / 1000) + 3600
+        },
+        SECRET_KEY,
+        { algorithm: 'HS256' }
+    );
+}
+
+// Configurar headers
+function getHeaders() {
+    return {
+        'Authorization': `Bearer ${gerarToken()}`,
+        'Content-Type': 'application/json'
+    };
+}
+
+// 1. Listar templates
+async function listarTemplates() {
+    const response = await axios.get(`${BASE_URL}/templates`, {
+        headers: getHeaders()
+    });
+    return response.data;
+}
+
+// 2. Buscar template com variaveis
+async function buscarTemplate(templateId) {
+    const response = await axios.get(`${BASE_URL}/templates/${templateId}`, {
+        headers: getHeaders()
+    });
+    return response.data;
+}
+
+// 3. Gerar contrato
+async function gerarContrato(templateId, variaveis, dadosLog = null) {
+    const body = {
+        templateId: templateId,
+        variaveis: variaveis
+    };
+
+    if (dadosLog) {
+        body.log = dadosLog;
+    }
+
+    const response = await axios.post(`${BASE_URL}/contracts/generate`, body, {
+        headers: getHeaders()
+    });
+    return response.data;
+}
+
+// Exemplo de uso
+async function exemplo() {
+    try {
+        // Listar templates
+        const templates = await listarTemplates();
+        console.log('Templates:', templates);
+
+        // Buscar template 1 com variaveis
+        const template = await buscarTemplate(1);
+        console.log('Template:', template);
+
+        // Gerar contrato
+        const contrato = await gerarContrato(1, {
+            nome_cliente: '<strong>Joao da Silva</strong>',
+            cpf_cliente: '123.456.789-00',
+            valor_contrato: 'R$ 10.000,00'
+        }, {
+            name: 'Operador Teste',
+            document: '111.222.333-44'
+        });
+
+        console.log('Contrato gerado:', contrato);
+        console.log('URL do PDF:', contrato.data.pdfUrl);
+
+    } catch (error) {
+        console.error('Erro:', error.response?.data || error.message);
+    }
+}
+
+exemplo();
+
+---------- EXEMPLO EM JAVASCRIPT (Frontend com Fetch) ----------
+
+// ATENCAO: Em frontend, a SECRET_KEY ficaria exposta!
+// Recomendamos fazer a geracao do token no backend.
+
+const BASE_URL = 'https://seu-dominio.com/api/v1';
+
+async function gerarContrato(token, templateId, variaveis) {
+    const response = await fetch(`${BASE_URL}/contracts/generate`, {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            templateId: templateId,
+            variaveis: variaveis
+        })
+    });
+
+    return await response.json();
+}
+
+================================================================================
+6. LOGS (OPCIONAL)
+================================================================================
+
+Voce pode enviar dados de log em qualquer requisicao para fins de auditoria.
+O log e OPCIONAL - se nao enviar, nenhum registro sera salvo.
+
+Adicione o campo "log" no body da requisicao:
+
+{
+    "templateId": 1,
+    "variaveis": { ... },
+    "log": {
+        "name": "Nome do operador",
+        "document": "CPF do operador",
+        "cargo": "Cargo",
+        "setor": "Setor",
+        "comentario": "Qualquer observacao"
+    }
+}
+
+Voce pode enviar qualquer campo dentro de "log" - todos sao opcionais.
+Os dados serao salvos para consulta posterior.
+
+================================================================================
+7. ERROS COMUNS
+================================================================================
+
+401 - Token nao fornecido
+{
+    "error": "Token nao fornecido",
+    "message": "Envie o token JWT no header Authorization: Bearer {token}"
+}
+Solucao: Adicione o header Authorization com o token.
+
+------------------------------------------------------------------------------
+
+401 - Token invalido
+{
+    "error": "Token invalido",
+    "message": "Assinatura do token invalida. Verifique a secret_key."
+}
+Solucao: Verifique se esta usando a SECRET_KEY correta para assinar o token.
+
+------------------------------------------------------------------------------
+
+401 - Token expirado
+{
+    "error": "Token expirado",
+    "message": "Gere um novo token JWT"
+}
+Solucao: Gere um novo token com uma data de expiracao futura.
+
+------------------------------------------------------------------------------
+
+401 - Empresa nao encontrada
+{
+    "error": "Empresa nao encontrada",
+    "message": "Access key invalida ou empresa inativa"
+}
+Solucao: Verifique se a ACCESS_KEY esta correta e se sua empresa esta ativa.
+
+------------------------------------------------------------------------------
+
+404 - Template nao encontrado
+{
+    "success": false,
+    "error": "Template nao encontrado"
+}
+Solucao: Verifique se o ID do template existe e pertence a sua empresa.
+
+------------------------------------------------------------------------------
+
+400 - Dados incompletos
+{
+    "success": false,
+    "error": "templateId e obrigatorio"
+}
+Solucao: Envie todos os campos obrigatorios no body da requisicao.
+
+================================================================================
+                              FIM DA DOCUMENTACAO
+================================================================================
+
+Duvidas? Entre em contato com o suporte.

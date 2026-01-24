@@ -2,9 +2,10 @@ import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useSelector } from 'react-redux';
 import { selectEmpresa } from '../store/empresaSlice';
+import SimpleHtmlEditor from './SimpleHtmlEditor';
 import theme from '../theme';
 
-const API_URL = 'http://localhost:3001/api';
+const API_URL = 'http://localhost:4002/api';
 
 function GenerateContractModal({ template, blocks, onClose }) {
   const empresa = useSelector(selectEmpresa);
@@ -29,10 +30,10 @@ function GenerateContractModal({ template, blocks, onClose }) {
 
       setVariables(uniqueVars);
 
-      // Inicializar valores
+      // Inicializar valores (apenas string HTML)
       const initialValues = {};
       uniqueVars.forEach(v => {
-        initialValues[v] = { type: 'texto', value: '' };
+        initialValues[v] = '';
       });
       setVariableValues(initialValues);
     };
@@ -40,141 +41,11 @@ function GenerateContractModal({ template, blocks, onClose }) {
     extractVariables();
   }, [blocks]);
 
-  const handleTypeChange = (varName, type) => {
-    setVariableValues(prev => ({
-      ...prev,
-      [varName]: {
-        ...prev[varName],
-        type,
-        value: type === 'tabela' ? [[['', ''], ['', '']]] : (type === 'varios_textos' ? [''] : '')
-      }
-    }));
-  };
-
   const handleValueChange = (varName, value) => {
     setVariableValues(prev => ({
       ...prev,
-      [varName]: { ...prev[varName], value }
+      [varName]: value
     }));
-  };
-
-  // Para Varios Textos
-  const addText = (varName) => {
-    setVariableValues(prev => ({
-      ...prev,
-      [varName]: {
-        ...prev[varName],
-        value: [...(prev[varName].value || []), '']
-      }
-    }));
-  };
-
-  const updateTextAt = (varName, index, text) => {
-    setVariableValues(prev => {
-      const newValue = [...prev[varName].value];
-      newValue[index] = text;
-      return {
-        ...prev,
-        [varName]: { ...prev[varName], value: newValue }
-      };
-    });
-  };
-
-  const removeTextAt = (varName, index) => {
-    setVariableValues(prev => {
-      const newValue = prev[varName].value.filter((_, i) => i !== index);
-      return {
-        ...prev,
-        [varName]: { ...prev[varName], value: newValue.length ? newValue : [''] }
-      };
-    });
-  };
-
-  // Para Tabela
-  const addTableRow = (varName) => {
-    setVariableValues(prev => {
-      const table = prev[varName].value[0] || [['', '']];
-      const cols = table[0]?.length || 2;
-      return {
-        ...prev,
-        [varName]: {
-          ...prev[varName],
-          value: [[...table, Array(cols).fill('')]]
-        }
-      };
-    });
-  };
-
-  const addTableColumn = (varName) => {
-    setVariableValues(prev => {
-      const table = prev[varName].value[0] || [['', '']];
-      return {
-        ...prev,
-        [varName]: {
-          ...prev[varName],
-          value: [table.map(row => [...row, ''])]
-        }
-      };
-    });
-  };
-
-  const updateTableCell = (varName, rowIndex, colIndex, value) => {
-    setVariableValues(prev => {
-      const table = [...prev[varName].value[0]];
-      table[rowIndex] = [...table[rowIndex]];
-      table[rowIndex][colIndex] = value;
-      return {
-        ...prev,
-        [varName]: { ...prev[varName], value: [table] }
-      };
-    });
-  };
-
-  // Para Imagem
-  const handleImageChange = (varName, e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        handleValueChange(varName, reader.result);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  // Converter valores para HTML
-  const convertToHtml = () => {
-    const htmlVariables = {};
-
-    for (const [varName, data] of Object.entries(variableValues)) {
-      switch (data.type) {
-        case 'texto':
-          htmlVariables[varName] = `<span>${data.value || ''}</span>`;
-          break;
-        case 'varios_textos':
-          htmlVariables[varName] = (data.value || [])
-            .filter(t => t.trim())
-            .map(t => `<p>${t}</p>`)
-            .join('');
-          break;
-        case 'imagem':
-          htmlVariables[varName] = data.value
-            ? `<img src="${data.value}" style="max-width: 100%; height: auto;" />`
-            : '';
-          break;
-        case 'tabela':
-          const table = data.value?.[0] || [['', '']];
-          const rows = table.map(row =>
-            `<tr>${row.map(cell => `<td style="border: 1px solid #000; padding: 8px;">${cell}</td>`).join('')}</tr>`
-          ).join('');
-          htmlVariables[varName] = `<table style="border-collapse: collapse; width: 100%;">${rows}</table>`;
-          break;
-        default:
-          htmlVariables[varName] = data.value || '';
-      }
-    }
-
-    return htmlVariables;
   };
 
   // Gerar conteúdo HTML completo do template
@@ -196,7 +67,6 @@ function GenerateContractModal({ template, blocks, onClose }) {
 
     try {
       const templateContent = generateTemplateContent();
-      const htmlVariables = convertToHtml();
 
       const response = await fetch(`${API_URL}/documentos/gerar`, {
         method: 'POST',
@@ -205,7 +75,7 @@ function GenerateContractModal({ template, blocks, onClose }) {
           empresaId: empresa.id,
           templateId: template.id,
           template: { content: templateContent },
-          variaveis: htmlVariables
+          variaveis: variableValues
         })
       });
 
@@ -238,7 +108,7 @@ function GenerateContractModal({ template, blocks, onClose }) {
       backgroundColor: theme.colors.background.paper,
       borderRadius: '12px',
       width: '90%',
-      maxWidth: '700px',
+      maxWidth: '800px',
       maxHeight: '90vh',
       display: 'flex',
       flexDirection: 'column',
@@ -270,99 +140,13 @@ function GenerateContractModal({ template, blocks, onClose }) {
       backgroundColor: theme.colors.background.subtle,
       borderRadius: '8px'
     },
-    variableHeader: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: '12px',
-      marginBottom: '0px'
-    },
     variableName: {
       fontWeight: 600,
       color: theme.colors.text.primary,
-      minWidth: '120px'
-    },
-    select: {
-      padding: '8px 12px',
-      borderRadius: '6px',
-      border: `1px solid ${theme.colors.border.input}`,
-      backgroundColor: theme.colors.background.paper,
-      color: theme.colors.text.primary,
-      fontSize: '0.875rem'
-    },
-    input: {
-      width: '100%',
-      padding: '10px 12px',
-      borderRadius: '6px',
-      border: `1px solid ${theme.colors.border.input}`,
-      backgroundColor: theme.colors.background.paper,
-      color: theme.colors.text.primary,
-      fontSize: '0.875rem',
-      marginTop: '8px'
-    },
-    textarea: {
-      width: '100%',
-      padding: '10px 12px',
-      borderRadius: '6px',
-      border: `1px solid ${theme.colors.border.input}`,
-      backgroundColor: theme.colors.background.paper,
-      color: theme.colors.text.primary,
-      fontSize: '0.875rem',
-      marginTop: '8px',
-      minHeight: '80px',
-      resize: 'vertical'
-    },
-    multiTextRow: {
-      display: 'flex',
-      gap: '8px',
-      marginTop: '8px',
-      alignItems: 'center'
-    },
-    btnAdd: {
-      padding: '6px 12px',
-      border: 'none',
-      borderRadius: '6px',
-      backgroundColor: theme.colors.primary.main,
-      color: '#fff',
-      cursor: 'pointer',
-      fontSize: '0.875rem'
-    },
-    btnRemove: {
-      padding: '6px 10px',
-      border: 'none',
-      borderRadius: '6px',
-      backgroundColor: theme.colors.error.main,
-      color: '#fff',
-      cursor: 'pointer',
-      fontSize: '0.875rem'
-    },
-    tableContainer: {
-      marginTop: '12px',
-      overflowX: 'auto'
-    },
-    table: {
-      width: '100%',
-      borderCollapse: 'collapse'
-    },
-    tableCell: {
-      border: `1px solid ${theme.colors.border.light}`,
-      padding: '4px'
-    },
-    tableCellInput: {
-      width: '100%',
-      padding: '8px',
-      border: 'none',
-      backgroundColor: 'transparent',
-      color: theme.colors.text.primary
-    },
-    tableActions: {
-      display: 'flex',
-      gap: '8px',
-      marginTop: '8px'
-    },
-    imagePreview: {
-      marginTop: '12px',
-      maxWidth: '200px',
-      borderRadius: '8px'
+      marginBottom: '10px',
+      display: 'block',
+      fontFamily: 'monospace',
+      fontSize: '0.95rem'
     },
     footer: {
       padding: '16px 24px',
@@ -406,101 +190,6 @@ function GenerateContractModal({ template, blocks, onClose }) {
     }
   };
 
-  const renderVariableInput = (varName) => {
-    const data = variableValues[varName];
-    if (!data) return null;
-
-    switch (data.type) {
-      case 'texto':
-        return (
-          <input
-            type="text"
-            style={styles.input}
-            placeholder="Digite o texto..."
-            value={data.value || ''}
-            onChange={(e) => handleValueChange(varName, e.target.value)}
-          />
-        );
-
-      case 'varios_textos':
-        return (
-          <div>
-            {(data.value || ['']).map((text, index) => (
-              <div key={index} style={styles.multiTextRow}>
-                <textarea
-                  style={{ ...styles.textarea, flex: 1, marginTop: 0 }}
-                  placeholder={`Texto ${index + 1}...`}
-                  value={text}
-                  onChange={(e) => updateTextAt(varName, index, e.target.value)}
-                />
-                {(data.value || []).length > 1 && (
-                  <button style={styles.btnRemove} onClick={() => removeTextAt(varName, index)}>
-                    ×
-                  </button>
-                )}
-              </div>
-            ))}
-            <button style={{ ...styles.btnAdd, marginTop: '8px' }} onClick={() => addText(varName)}>
-              + Adicionar Texto
-            </button>
-          </div>
-        );
-
-      case 'imagem':
-        return (
-          <div>
-            <input
-              type="file"
-              accept="image/png,image/jpg,image/jpeg"
-              style={styles.input}
-              onChange={(e) => handleImageChange(varName, e)}
-            />
-            {data.value && (
-              <img src={data.value} alt="Preview" style={styles.imagePreview} />
-            )}
-          </div>
-        );
-
-      case 'tabela':
-        const table = data.value?.[0] || [['', ''], ['', '']];
-        return (
-          <div>
-            <div style={styles.tableContainer}>
-              <table style={styles.table}>
-                <tbody>
-                  {table.map((row, rowIndex) => (
-                    <tr key={rowIndex}>
-                      {row.map((cell, colIndex) => (
-                        <td key={colIndex} style={styles.tableCell}>
-                          <input
-                            style={styles.tableCellInput}
-                            value={cell}
-                            onChange={(e) => updateTableCell(varName, rowIndex, colIndex, e.target.value)}
-                            placeholder={`${rowIndex + 1},${colIndex + 1}`}
-                          />
-                        </td>
-                      ))}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            <div style={styles.tableActions}>
-              <button style={styles.btnAdd} onClick={() => addTableRow(varName)}>
-                + Linha
-              </button>
-              <button style={styles.btnAdd} onClick={() => addTableColumn(varName)}>
-                + Coluna
-              </button>
-            </div>
-          </div>
-        );
-
-      default:
-        return null;
-    }
-  };
-
   const modalContent = (
     <div style={styles.overlay}>
       <div style={styles.modal}>
@@ -509,7 +198,7 @@ function GenerateContractModal({ template, blocks, onClose }) {
             {pdfUrl ? 'Documento Gerado' : 'Gerar Documento'}
           </h3>
           {!pdfUrl && !loading && (
-            <p style={styles.subtitle}>Selecione as atribuições para cada variável do documento.</p>
+            <p style={styles.subtitle}>Preencha o conteudo HTML para cada variavel do documento.</p>
           )}
         </div>
 
@@ -527,26 +216,18 @@ function GenerateContractModal({ template, blocks, onClose }) {
             />
           ) : variables.length === 0 ? (
             <div style={styles.noVariables}>
-              <p>Nenhuma variável encontrada no template.</p>
-              <p>O documento será gerado sem substituições.</p>
+              <p>Nenhuma variavel encontrada no template.</p>
+              <p>O documento sera gerado sem substituicoes.</p>
             </div>
           ) : (
             variables.map(varName => (
               <div key={varName} style={styles.variableRow}>
-                <div style={styles.variableHeader}>
-                  <span style={styles.variableName}>{`{{${varName}}}`}</span>
-                  <select
-                    style={styles.select}
-                    value={variableValues[varName]?.type || 'texto'}
-                    onChange={(e) => handleTypeChange(varName, e.target.value)}
-                  >
-                    <option value="texto">Texto</option>
-                    <option value="varios_textos">Vários Textos</option>
-                    <option value="imagem">Imagem</option>
-                    <option value="tabela">Tabela</option>
-                  </select>
-                </div>
-                {renderVariableInput(varName)}
+                <span style={styles.variableName}>{`{{${varName}}}`}</span>
+                <SimpleHtmlEditor
+                  value={variableValues[varName] || ''}
+                  onChange={(val) => handleValueChange(varName, val)}
+                  placeholder="Digite o conteudo..."
+                />
               </div>
             ))
           )}
